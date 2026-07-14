@@ -1337,9 +1337,25 @@ import com.liferay.object.service.ObjectEntryLocalServiceUtil
 import com.liferay.segments.service.SegmentsEntryLocalServiceUtil
 import org.jsoup.Jsoup
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil
-import com.liferay.commerce.product.model.CPDefinition
-import com.liferay.commerce.product.service.CPDefinitionLocalServiceUtil
-              
+import com.liferay.portal.kernel.module.util.SystemBundleUtil
+
+def loadOptionalClass(String className, String bundleSymbolicName) {
+    try {
+        def bundleContext = SystemBundleUtil.getBundleContext()
+        def bundle = bundleContext.bundles.find {
+            it.symbolicName == bundleSymbolicName && it.state == Bundle.ACTIVE
+        }
+        if (bundle == null) {
+            out.println("Bundle not found or not ACTIVE: ${bundleSymbolicName}")
+            return null
+        }
+        return bundle.loadClass(className)
+    } catch (Exception e) {
+        out.println("loadOptionalClass failed for ${className}: ${e}")
+        return null
+    }
+}
+
 // Wrapper function for '5_new_items.groovy'
 def invoke__5_new_items_groovy(Map<String, Object> uasContext) {
 
@@ -1428,20 +1444,28 @@ println UASUtils.toCSVLine(
 
 def globalCount = 0
 
-companies.each { company ->
-    long companyId = company.getCompanyId()
+def cpDefinitionServiceClass = loadOptionalClass(
+    "com.liferay.commerce.product.service.CPDefinitionLocalServiceUtil",
+    "com.liferay.commerce.product.service")
 
-    // Get all CPDefinitions for this company
-    def cpDefinitions = CPDefinitionLocalServiceUtil.getCPDefinitions(-1, -1).findAll {
-        it.getCompanyId() == companyId
+if (cpDefinitionServiceClass) {
+    companies.each { company ->
+        long companyId = company.getCompanyId()
+
+        def cpDefinitions = cpDefinitionServiceClass.getCPDefinitions(-1, -1).findAll {
+            it.getCompanyId() == companyId
+        }
+
+        globalCount += cpDefinitions.size()
     }
 
-    globalCount += cpDefinitions.size()
-}
 
-println UASUtils.toCSVLine(
+    println UASUtils.toCSVLine(
         'newitems_total_commerce_products', globalCount, "Total number of commerce product across all companies")
 
+} else {
+    out.println("Commerce not available — skipping CPDefinition count")
+}
    
     } catch (Throwable t) {
         println "UAS ERROR: Execution failed for topic script '5_new_items.groovy': ${t}"
