@@ -152,6 +152,14 @@ All scripts print CSV lines: `"Key", "Value", "Description"`.
     `newitems_workflow_definitions_count`, `newitems_style_books_count`, `newitems_collections_count`,
     `newitems_batch_planner_plans_count`, `newitems_oauth2_applications_count`
 
+- **Sizing and hidden customizations** (all 7.x, CE and Quarterly Release scripts):
+  - Documents and Media: `data_dl_total_size_bytes`, `data_dl_all_versions_size_bytes` (approximate file store
+    size to migrate), `data_dl_files_by_mime_type`
+  - Marketplace apps: `custom_code_marketplace_apps_count` (`.lpkg` files not provided by Liferay)
+  - Scripts outside of modules: `custom_code_workflow_scripts_count` (Groovy / JavaScript / Java scripts in workflow
+    definitions), `custom_code_scheduled_jobs_count` (scheduled jobs not provided by Liferay),
+    `custom_code_dispatch_triggers_count` (Dispatch triggers, e.g. Groovy scripts)
+  - Languages: `data_locales_enabled_count` (languages per virtual instance, sites with their own languages)
 - **Deprecation checks** (all 7.x, CE and Quarterly Release scripts): `deprecation_*` lines show how much the
   installation uses features that Liferay has deprecated, archived, removed or put in maintenance mode, with the
   release and the recommended replacement taken from the "Maintenance Mode and Deprecations" and "Breaking Changes"
