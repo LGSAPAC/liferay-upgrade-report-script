@@ -22,7 +22,17 @@ The process has three steps:
 
 ## Step 0: Identify your version
 
-Sign in as an administrator and open **Server Administration**:
+The quickest way: run [`identify_version.groovy`](identify_version.groovy) in the Script console (see Step 1 for
+how to run a script). It prints your edition and version and the name of the script to use, for example:
+
+```
+Release:  Liferay Community Edition Portal 7.4.3.132 CE GA132 (...)
+Edition:  Liferay Portal Community Edition (CE)
+Version:  7.4.3.132
+Script:   ce_7_4/ce_7_4-all.groovy
+```
+
+Or look it up yourself. Sign in as an administrator and open **Server Administration**:
 
 | Version | Where to find Server Administration |
 | --- | --- |
@@ -122,6 +132,23 @@ before sending it. Share the file only with Liferay.
 Liferay reviews the report, carries out a health check of your installation, and validates whether you qualify for
 the Liferay upgrade program. Your customer success contact will follow up with the results and the next steps.
 
+## If something fails
+
+The scripts are built to always finish and always print every key:
+
+- Each part of the report runs on its own. If a feature is not available, a module is deactivated (for example
+  Commerce), or a module failed to start after an upgrade, only the keys of that part are reported with an empty
+  value and an `n/a - <reason>` description; the rest of the report is not affected.
+- Optional modules are loaded when the script runs instead of being imported, so a missing module cannot stop the
+  script from starting. With Commerce deactivated, `newitems_total_commerce_products` is counted in its database
+  table.
+- Every table count has its own time limit (120 s); tables that cannot be counted are listed in
+  `data_tables_unreadable_count`.
+- `uas_section_durations` shows how long each part took, which helps if the Script console times out on very large
+  installations.
+
+If the page shows *Unable to execute script*, send the error text together with your version.
+
 ## Output format
 
 All scripts print CSV lines: `"Key", "Value", "Description"`.
@@ -135,7 +162,9 @@ All scripts print CSV lines: `"Key", "Value", "Description"`.
     `infra_liferay_quarterly_release` and `infra_liferay_quarterly_release_lts` (Quarterly Release scripts only),
     `infra_liferay_build_age_days`, `infra_liferay_script_target_release`, `infra_liferay_script_target_match`
   - Upgrade readiness: `infra_portal_schema_version`, `infra_upgrade_failed_modules_count`,
-    `infra_feature_flags_enabled_count`, `infra_database_partition_enabled`, `infra_cluster_link_enabled`,
+    `infra_feature_flags_enabled_count` (feature.flag.* portal properties), `infra_feature_flags_active_count`
+    (feature flags enabled per virtual instance, incl. those switched on in Instance / System Settings, by type: beta,
+    release, deprecation, dev), `infra_database_partition_enabled`, `infra_cluster_link_enabled`,
     `infra_upgrade_database_auto_run`, `infra_company_default_web_id`
   - Data: `data_forms_count`, `data_form_records_count`, `data_layout_page_template_structures_count`,
     `data_asset_entries_count`, `data_dl_file_versions_count`, `data_organizations_count`,
@@ -173,6 +202,7 @@ All scripts print CSV lines: `"Key", "Value", "Description"`.
   - Data: Message Boards, Wiki, Microblogs, Dynamic Data Lists, Kaleo Forms, Polls, App Builder, Bookmarks, Forms,
     Custom Fields, Knowledge Base, Blogs, local Segments, Object 1:1 relationships, widgets embedded in fragments,
     Velocity templates and Velocity in workflow
+  - Deprecation feature flags that are switched on (`deprecation_feature_flags_enabled_count`)
   - Configuration and platform: CAS, NTLM, OpenAM / OpenSSO, Google Login, OpenID, OAuth 1.0a, Akismet, Live
     Users, SOAP web services, OpenOffice, Java version, application server, Elasticsearch 7 / Solr / sidecar,
     Liferay Sync
@@ -182,3 +212,10 @@ All scripts print CSV lines: `"Key", "Value", "Description"`.
 If a script does not match the running version, `ce_target_match` / `infra_liferay_script_target_match` is `false`
 and the description names the script to use instead. A feature that does not exist in a given release is reported
 with an empty value and an `n/a - ...` description instead of stopping the script.
+
+## For maintainers
+
+The 7.4, Quarterly Release and CE scripts are generated, and the 7.0 - 7.3 scripts get their shared sections, from
+the sources in [`tools/build`](tools/build). Change the sources there and run `tools/build/build_all.sh`, instead
+of editing the `*-all.groovy` files one by one.
+

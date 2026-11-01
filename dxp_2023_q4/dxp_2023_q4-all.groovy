@@ -147,6 +147,108 @@ class TableInfo implements Comparable<TableInfo> {
 
 // END included '_utils.groovy'
 
+// BEGIN included '_uas_helpers.groovy'
+// Robustness helpers shared by all topic scripts:
+// - uasClass: loads classes of OSGi modules at runtime instead of importing them, so a module that is not active
+//   (deactivated, blacklisted, or left unresolved by a failed upgrade, e.g. Commerce) cannot stop the whole script
+//   from compiling. Returns null when the class is not available.
+// - uasGuard: runs one block of the report; if it fails, the keys of that block that were not printed yet are
+//   reported with an empty value and an 'n/a - <error>' description, and the script continues with the next block.
+// - uasTimed: measures how long each topic script takes (reported as uas_section_durations).
+
+@groovy.transform.Field Map<String, Object> _uasClassCache = [:]
+
+def uasClass(String className) {
+    if (_uasClassCache.containsKey(className)) {
+        return _uasClassCache[className]
+    }
+    def clazz = null
+    try {
+        clazz = this.getClass().getClassLoader().loadClass(className)
+    } catch (Throwable ignored) {
+    }
+    if (clazz == null) {
+        try {
+            def bundleContext = uasBundleContext()
+            def parts = className.tokenize('.')
+            def appPrefix = parts.size() > 3 ? parts[0..3].join('.') : className
+            for (bundle in (bundleContext?.bundles ?: []).findAll {
+                it.state == org.osgi.framework.Bundle.ACTIVE && it.symbolicName && it.symbolicName.startsWith(appPrefix)
+            }) {
+                try {
+                    clazz = bundle.loadClass(className)
+                    break
+                } catch (Throwable ignored) {
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+    _uasClassCache[className] = clazz
+    return clazz
+}
+
+def uasBundleContext() {
+    try {
+        return com.liferay.portal.kernel.module.util.SystemBundleUtil.getBundleContext()
+    } catch (Throwable ignored) {
+    }
+    // 7.0: no SystemBundleUtil, use the bundle of a core module API class
+    for (className in ['com.liferay.dynamic.data.mapping.service.DDMStructureLocalService', 'com.liferay.journal.service.JournalArticleLocalService']) {
+        try {
+            def bundle = org.osgi.framework.FrameworkUtil.getBundle(this.getClass().getClassLoader().loadClass(className))
+            if (bundle?.getBundleContext() != null) {
+                return bundle.getBundleContext()
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+    return null
+}
+
+def uasGuard(List<String> keys, Closure body) {
+    def originalOut = binding.hasVariable('out') ? binding.getVariable('out') : null
+    def buffer = new StringWriter()
+    Throwable error = null
+    try {
+        if (originalOut != null) {
+            binding.setVariable('out', new PrintWriter(buffer, true))
+        }
+        body()
+    } catch (Throwable t) {
+        error = t
+    } finally {
+        if (originalOut != null) {
+            binding.setVariable('out', originalOut)
+        }
+    }
+    def text = buffer.toString()
+    if (originalOut != null) {
+        originalOut.print(text)
+    } else {
+        print(text)
+    }
+    if (error != null) {
+        def message = "n/a - ${error.class.name}: ${error.message}".toString()
+        keys.findAll { key -> !text.contains('"' + key + '", ') }.each { key ->
+            println UASUtils.toCSVLine(key, '', message)
+        }
+    }
+}
+
+def uasTimed(Map<String, Object> timings, String name, Closure body) {
+    long start = System.currentTimeMillis()
+    try {
+        body()
+    } catch (Throwable t) {
+        println "UAS ERROR: '${name}' failed: ${t}"
+    } finally {
+        timings[name] = System.currentTimeMillis() - start
+    }
+}
+
+// END included '_uas_helpers.groovy'
+
 // BEGIN included '1_infra.groovy'  
 
 // Imports for '1_infra.groovy' 
@@ -155,7 +257,6 @@ import com.liferay.portal.kernel.search.SearchEngine
 import com.liferay.portal.kernel.search.SearchEngineHelperUtil
 import com.liferay.portal.kernel.util.ReleaseInfo
 import com.liferay.portal.kernel.util.ServerDetector
-import com.liferay.portal.search.engine.SearchEngineInformation
 import com.liferay.portal.kernel.util.PropsUtil
 import org.osgi.framework.FrameworkUtil
 import org.osgi.util.tracker.ServiceTracker
@@ -169,7 +270,6 @@ def invoke__1_infra_groovy(Map<String, Object> uasContext) {
 //__GRADLE_COMMENT__ import com.liferay.portal.kernel.search.SearchEngineHelperUtil
 //__GRADLE_COMMENT__ import com.liferay.portal.kernel.util.ReleaseInfo
 //__GRADLE_COMMENT__ import com.liferay.portal.kernel.util.ServerDetector
-//__GRADLE_COMMENT__ import com.liferay.portal.search.engine.SearchEngineInformation
 //__GRADLE_COMMENT__ import com.liferay.portal.kernel.util.PropsUtil
 //__GRADLE_COMMENT__ import org.osgi.framework.FrameworkUtil
 //__GRADLE_COMMENT__ import org.osgi.util.tracker.ServiceTracker
@@ -400,11 +500,11 @@ println("${UASUtils.toCSVLine('infra_database_jdbc', databaseJdbc, databaseJdbcD
 
 
 // Search Information
-SearchEngineInformation searchEngineInformation = null
-ServiceTracker<SearchEngineInformation, Object> st = null
+def searchEngineInformation = null
+ServiceTracker st = null
 try {
-    def bundle = FrameworkUtil.getBundle(executorClass ?: SearchEngineInformation.class)
-    st = new ServiceTracker(bundle.bundleContext, SearchEngineInformation.class, null)
+    def bundle = [bundleContext: (executorClass ? FrameworkUtil.getBundle(executorClass)?.bundleContext : null) ?: uasBundleContext()]
+    st = new ServiceTracker(bundle.bundleContext, 'com.liferay.portal.search.engine.SearchEngineInformation', null)
     st.open()
     if (!st.isEmpty()) {
         searchEngineInformation = st.getService()
@@ -528,6 +628,40 @@ try {
 } catch (Throwable t) {
     println("${UASUtils.toCSVLine('infra_feature_flags_enabled_count', '', "n/a - ${t}")}")
 }
+
+// Feature flags switched on per virtual instance (Instance Settings / System Settings > Feature Flags), via the
+// FeatureFlagManager service: covers flags enabled in the UI, not only the feature.flag.* portal properties above
+uasGuard(['infra_feature_flags_active_count']) {
+    def ffContext = uasBundleContext()
+    def ffReference = ffContext?.getServiceReference('com.liferay.portal.kernel.feature.flag.FeatureFlagManager')
+    if (ffReference == null) {
+        println("${UASUtils.toCSVLine('infra_feature_flags_active_count', '', 'n/a - FeatureFlagManager not available in this release (see infra_feature_flags_enabled_count)')}")
+    } else {
+        def ffManager = ffContext.getService(ffReference)
+        try {
+            def allFlags = { f -> true } as java.util.function.Predicate
+            def enabledKeys = [] as Set
+            def byType = [:].withDefault { 0 }
+            def lines = []
+            com.liferay.portal.kernel.service.CompanyLocalServiceUtil.getCompanies().each { company ->
+                def enabled = ffManager.getFeatureFlags(company.companyId, allFlags).findAll { it.isEnabled() }
+                enabled.sort { "${it.featureFlagType}-${it.key}" }.each { flag ->
+                    enabledKeys << flag.key
+                    byType[flag.featureFlagType.toString()] = byType[flag.featureFlagType.toString()] + 1
+                    def title = ''
+                    try {
+                        title = flag.getTitle(company.locale) ?: ''
+                    } catch (Throwable ignored) {
+                    }
+                    lines << " - ${company.webId} | ${flag.featureFlagType} | ${flag.key} | ${title}"
+                }
+            }
+            println("${UASUtils.toCSVLine('infra_feature_flags_active_count', enabledKeys.size(), "Feature flags enabled (virtual instance | type | key | title), by type: ${byType.collect { "${it.key} ${it.value}" }.join(', ') ?: 'none'}:\n${lines.join('\n')}")}")
+        } finally {
+            ffContext.ungetService(ffReference)
+        }
+    }
+}
    
     } catch (Throwable t) {
         println "UAS ERROR: Execution failed for topic script '1_infra.groovy': ${t}"
@@ -543,459 +677,455 @@ try {
 // invoke__1_infra_groovy([ debug: false ])              
 // END included '1_infra.groovy'
 
-// BEGIN included '2_data.groovy'  
+// BEGIN included '2_data.groovy'
 
-// Imports for '2_data.groovy' 
+// Imports for '2_data.groovy' (portal kernel only; classes of OSGi modules are loaded with uasClass)
 import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil
-import com.liferay.dynamic.data.mapping.model.DDMStructure
-import com.liferay.dynamic.data.mapping.model.DDMTemplate
-import com.liferay.dynamic.data.mapping.service.DDMFieldLocalServiceUtil
-import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil
-import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalServiceUtil
 import com.liferay.expando.kernel.model.ExpandoBridge
 import com.liferay.expando.kernel.model.ExpandoTable
 import com.liferay.expando.kernel.service.ExpandoTableLocalServiceUtil
 import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil
 import com.liferay.exportimport.kernel.staging.StagingUtil
-import com.liferay.fragment.service.FragmentEntryLocalServiceUtil
-import com.liferay.journal.service.JournalArticleLocalServiceUtil
-import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil
+import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil
 import com.liferay.portal.kernel.dao.orm.QueryUtil
+import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal
-import com.liferay.portal.kernel.service.*
-import com.liferay.portal.kernel.util.PrefsPropsUtil
-import com.liferay.portal.kernel.util.PropsKeys
-import com.liferay.portal.kernel.util.Validator
+import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil
+import com.liferay.portal.kernel.service.LayoutFriendlyURLLocalServiceUtil
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil
+import com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil
+import com.liferay.portal.kernel.service.UserLocalServiceUtil
 import com.liferay.portal.kernel.template.TemplateConstants
-import com.liferay.portal.kernel.util.PropsUtil
-              
+import com.liferay.portal.kernel.util.PrefsPropsUtil
+import com.liferay.portal.kernel.util.Validator
+
 // Wrapper function for '2_data.groovy'
 def invoke__2_data_groovy(Map<String, Object> uasContext) {
 
     try {
-//__GRADLE_COMMENT__ import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil
-//__GRADLE_COMMENT__ import com.liferay.dynamic.data.mapping.model.DDMStructure
-//__GRADLE_COMMENT__ import com.liferay.dynamic.data.mapping.model.DDMTemplate
-//__GRADLE_COMMENT__ import com.liferay.dynamic.data.mapping.service.DDMFieldLocalServiceUtil
-//__GRADLE_COMMENT__ import com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil
-//__GRADLE_COMMENT__ import com.liferay.dynamic.data.mapping.service.DDMTemplateLocalServiceUtil
-//__GRADLE_COMMENT__ import com.liferay.expando.kernel.model.ExpandoBridge
-//__GRADLE_COMMENT__ import com.liferay.expando.kernel.model.ExpandoTable
-//__GRADLE_COMMENT__ import com.liferay.expando.kernel.service.ExpandoTableLocalServiceUtil
-//__GRADLE_COMMENT__ import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil
-//__GRADLE_COMMENT__ import com.liferay.exportimport.kernel.staging.StagingUtil
-//__GRADLE_COMMENT__ import com.liferay.fragment.service.FragmentEntryLocalServiceUtil
-//__GRADLE_COMMENT__ import com.liferay.journal.service.JournalArticleLocalServiceUtil
-//__GRADLE_COMMENT__ import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.dao.orm.QueryUtil
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.security.auth.CompanyThreadLocal
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.service.*
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.util.PrefsPropsUtil
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.util.PropsKeys
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.util.Validator
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.template.TemplateConstants
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.util.PropsUtil
+        // Liferay version family this script was generated for: 7.0, 7.1, 7.2, 7.3 or 7.4 (7.4 GA/Updates and Quarterly Releases)
+        def variant = '7.4'
 
-def DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH.mm.ss.SSSSS Z"
+        def DDMStructureLocalServiceUtil = uasClass('com.liferay.dynamic.data.mapping.service.DDMStructureLocalServiceUtil')
+        def DDMTemplateLocalServiceUtil = uasClass('com.liferay.dynamic.data.mapping.service.DDMTemplateLocalServiceUtil')
+        def JournalArticleLocalServiceUtil = uasClass('com.liferay.journal.service.JournalArticleLocalServiceUtil')
 
-// Groups and Sites
-def groups = GroupLocalServiceUtil.getGroups(QueryUtil.ALL_POS, QueryUtil.ALL_POS)
-def sites = groups.findAll { it.site }
+        def companies = CompanyLocalServiceUtil.getCompanies()
+        def companyIds = companies*.companyId
 
-// DDM
-def wcTemplateClassnameId =
-        ClassNameLocalServiceUtil.getClassNameId(DDMStructure.class)
-def ddmTemplates = DDMTemplateLocalServiceUtil.getDDMTemplates(QueryUtil.ALL_POS, QueryUtil.ALL_POS)
-def companyIds = CompanyLocalServiceUtil.getCompanies()*.companyId
-// 'Default user' was renamed to 'guest user' during 7.4 / Quarterly Releases (getDefaultUserId removed in later releases)
-def defaultUserIds = companyIds.collect { companyId ->
-    try {
-        UserLocalServiceUtil.getGuestUserId(companyId)
-    } catch (MissingMethodException ignored) {
-        UserLocalServiceUtil.getDefaultUserId(companyId)
-    }
-}
-def templatesCategorized = ddmTemplates.inject([adt: [], wc: []]) { templateCategories, template ->
-    // Ignore BASIC-WEB-CONTENT
-    if (template.getClassNameId() == wcTemplateClassnameId && template.getTemplateKey() != 'BASIC-WEB-CONTENT') {
-        templateCategories.wc.push(template)
-        // Only show custom ADTs
-    } else if (!(template.getUserId() in defaultUserIds)) {
-        templateCategories.adt.push(template)
-    }
-    return templateCategories
-}
-List<DDMTemplate> webContentTemplates = templatesCategorized.wc
-def webContentTemplatesCount = webContentTemplates.size()
-List<DDMTemplate> applicationDisplayTemplates = templatesCategorized.adt
-def applicationDisplayTemplatesCount = applicationDisplayTemplates.size()
-def dDMStructuresCount = DDMStructureLocalServiceUtil.getDDMStructuresCount()
-def dDMTemplatesCount = DDMTemplateLocalServiceUtil.getDDMTemplatesCount()
-def dDMFieldsCount = DDMFieldLocalServiceUtil.getDDMFieldsCount()
-
-def companiesCount = CompanyLocalServiceUtil.getCompaniesCount()
-def usersCount = UserLocalServiceUtil.getUsersCount()
-def layoutsCount = LayoutLocalServiceUtil.getLayoutsCount()
-def journalArticlesCount = JournalArticleLocalServiceUtil.getJournalArticlesCount()
-def dLFileEntriesCount = DLFileEntryLocalServiceUtil.getDLFileEntriesCount()
-def portletPreferences
-try {
-    portletPreferences = PortletPreferencesLocalServiceUtil.getPortletPreferences()
-} catch (MissingMethodException ignored) {
-    portletPreferences = PortletPreferencesLocalServiceUtil.getPortletPreferences(QueryUtil.ALL_POS, QueryUtil.ALL_POS)
-}
-def portletIds = portletPreferences.collect {
-    it.portletId - ~/_INSTANCE.*/
-}.unique().sort()
-def layoutFriendlyURLsCount = LayoutFriendlyURLLocalServiceUtil.getLayoutFriendlyURLsCount()
-def layoutFriendlyURLs =
-        LayoutFriendlyURLLocalServiceUtil.getLayoutFriendlyURLs(QueryUtil.ALL_POS, QueryUtil.ALL_POS)
-
-def liferayPortlets =
-        portletIds.findAll { it.contains('liferay') }
-def customPortlets =
-        portletIds.findAll { !it.contains('liferay') }
-def fragmentsCount = FragmentEntryLocalServiceUtil.getFragmentEntriesCount()
-def layoutPageTemplatesCount = LayoutPageTemplateEntryLocalServiceUtil.getLayoutPageTemplateEntriesCount()
-
-// There may be many more, but ROM calculator only asks about VM and FTL, so only make sure these are put as CSV lines
-def ddmTemplatesSupportedLangs = [TemplateConstants.LANG_TYPE_VM, TemplateConstants.LANG_TYPE_FTL]
-def webContentTemplatesByLang =
-        webContentTemplates.groupBy { DDMTemplate it -> it.language }
-
-ddmTemplatesSupportedLangs.each {
-    webContentTemplatesByLang.putIfAbsent(it, Collections.emptyList())
-}
-
-def adtTemplatesByLang =
-        applicationDisplayTemplates.groupBy { DDMTemplate it -> it.language }
-
-ddmTemplatesSupportedLangs.each {
-    adtTemplatesByLang.putIfAbsent(it, Collections.emptyList())
-}
-
-// Questions keys
-
-println UASUtils.toCSVLine("data_companies_count", "${companiesCount}", "")
-println UASUtils.toCSVLine("data_custom_application_display_templates_adt_count", "${applicationDisplayTemplatesCount}", "")
-println UASUtils.toCSVLine("data_custom_web_content_templates_wc_count", "${webContentTemplatesCount}", "")
-println UASUtils.toCSVLine("data_ddm_contents_count", "", "n/a (deprecated in 7.4+)")
-println UASUtils.toCSVLine("data_ddm_fields_count", "${dDMFieldsCount}", "")
-println UASUtils.toCSVLine("data_ddm_structures_count", "${dDMStructuresCount}", "")
-println UASUtils.toCSVLine("data_ddm_templates_count", "${dDMTemplatesCount}", "")
-println UASUtils.toCSVLine("data_dl_files_count", "${dLFileEntriesCount}", "")
-println UASUtils.toCSVLine("data_fragments_count", "${fragmentsCount}", "")
-println UASUtils.toCSVLine("data_journal_articles_count", "${journalArticlesCount}", "")
-println UASUtils.toCSVLine("data_layouts_count", "${layoutsCount}", "")
-println UASUtils.toCSVLine("data_layouts_friendly_url_count", "${layoutFriendlyURLsCount}", "")
-println UASUtils.toCSVLine("data_page_templates_count", "${layoutPageTemplatesCount}", "")
-println UASUtils.toCSVLine("data_used_custom_portlets_count", "${customPortlets.size()}", "\n${customPortlets.collect { "      * ${it}" }.join('\n')}")
-println UASUtils.toCSVLine("data_used_liferay_portlets_count", "${liferayPortlets.size()}", "\n${liferayPortlets.collect { "      * ${it}" }.join('\n')}")
-println UASUtils.toCSVLine("data_user_private_pages_enabled", "${PropsUtil.get('layout.user.private.layouts.enabled')}", "")
-println UASUtils.toCSVLine("data_user_public_pages_enabled", "${PropsUtil.get('layout.user.public.layouts.enabled')}", "")
-println UASUtils.toCSVLine("data_users_count", "${usersCount}", "")
-
-if (layoutsCount > usersCount) {
-    println UASUtils.toCSVLine("data_users_layouts_count", "${(usersCount * 2)}", "")
-    println UASUtils.toCSVLine("data_custom_layouts_count", "${(layoutsCount - (usersCount * 2))}", "")
-}
-
-webContentTemplatesByLang.each { lang, templates ->
-    println UASUtils.toCSVLine(
-            "data_wc_templates_by_lang_${lang}_count", templates.size(),
-            "Custom WC templates with '${lang}' as the language:\n${templates.collect { " - ${it.nameCurrentValue} { templateKey=${it.templateKey}, templateId=${it.templateId} }" }.join('\n')}")
-}
-
-
-adtTemplatesByLang.each { lang, templates ->
-    println UASUtils.toCSVLine(
-            "data_adt_templates_by_lang_${lang}_count", templates.size(),
-            "Custom ADT templates with '${lang}' as the language:\n${templates.collect { " - ${it.nameCurrentValue} { templateKey=${it.templateKey}, templateId=${it.templateId} }" }.join('\n')}")
-}
-
-// StagingUtil::getLiveGroup(long) vs getLiveGroup(Group) availability differs across 7.4 Updates / Quarterly Releases
-def _getLiveGroup = { group ->
-    try {
-        return StagingUtil.getLiveGroup(group) ?: group
-    } catch (Throwable ignored) {
-        try {
-            return StagingUtil.getLiveGroup(group.groupId) ?: group
-        } catch (Throwable ignored2) {
-            return group
+        // Sites only (the groups table also holds one group per user, organization, ...)
+        def sites = null
+        def loadSites = {
+            if (sites == null) {
+                def siteQuery = GroupLocalServiceUtil.dynamicQuery()
+                siteQuery.add(RestrictionsFactoryUtil.eq('site', true))
+                siteQuery.addOrder(com.liferay.portal.kernel.dao.orm.OrderFactoryUtil.asc('name'))  // same order as GroupLocalServiceUtil::getGroups
+                sites = GroupLocalServiceUtil.dynamicQuery(siteQuery)
+            }
+            return sites
         }
-    }
-}
 
-def siteDetails = ''<<''
-def childGroupCount = 0;
-
-siteDetails <<= "type, companyId, groupId, friendlyURL, name, staging, parent site name"
-
-sites.each { it ->
-    def parentGroupName = "N/A"
-    def type = "PARENT_GROUP"
-    def liveGroup = _getLiveGroup(it)
-    def parentGroupId = it.parentGroupId
-
-    if (!parentGroupId==0) {
-        type = "CHILD_GROUP"
-        parentGroupName = GroupLocalServiceUtil.getGroup(parentGroupId).getName()
-        childGroupCount++
-    }
-
-    siteDetails <<= "\n\t${type}, ${it.companyId}, ${it.groupId}, ${it.friendlyURL}, ${it.nameCurrentValue}, ${liveGroup.staged}, ${parentGroupName}"
-}
-
-// data_sites_count
-def siteSize = sites.size()
-println UASUtils.toCSVLine('data_sites_count',"${siteSize}","${siteDetails.toString()}")
-println UASUtils.toCSVLine('data_sites_details', "", "${siteSize-childGroupCount} Parent Sites, ${childGroupCount} Child Sites")
-
-def stagingEnabled = sites.any{ _getLiveGroup(it).staged }
-
-// data_staging_enabled
-println UASUtils.toCSVLine('data_staging_enabled',"${stagingEnabled}",'see data_sites_count for more details')
-
-// data_file_store_method
-println UASUtils.toCSVLine('data_file_store_method', PropsUtil.get('dl.store.impl'), "");
-// data_live_users_enabled
-println UASUtils.toCSVLine('data_live_users_enabled', PropsUtil.get('live.users.enabled'), "");
-
-// data_google_maps_integration
-def googleMapsIntegration = false;
-def mapProviderKey = "MAP_PROVIDER_KEY";
-def googleMapsKey = "GoogleMaps";
-
-// Enabled via Site Settings - Advanced Tab
-for (def group : groups) {
-    def typeSettings = group.getTypeSettingsProperty(mapProviderKey);
-
-    if (!Validator.isBlank(typeSettings)) {
-        if (typeSettings == googleMapsKey) {
-            googleMapsIntegration = true;
+        // Counts and lists shared by several keys, each computed once
+        def counts = [:]
+        def countOf = { String name, Closure counter ->
+            if (!counts.containsKey(name)) {
+                counts[name] = counter()
+            }
+            return counts[name]
         }
-    }
-}
 
-// Enabled via Instance Settings --> Miscellaneous
-for (def companyId : companyIds) {
-    def companyPortletPreferences = PrefsPropsUtil.getPreferences(companyId);
+        // DDM templates: custom web content templates (WC) and application display templates (ADT)
+        def webContentTemplates = null
+        def applicationDisplayTemplates = null
+        def loadTemplates = {
+            if (webContentTemplates == null) {
+                def wcTemplateClassnameId = ClassNameLocalServiceUtil.getClassNameId('com.liferay.dynamic.data.mapping.model.DDMStructure')
+                def defaultUserIds = companyIds.collect { companyId ->
+                    try {
+                        UserLocalServiceUtil.getGuestUserId(companyId)
+                    } catch (MissingMethodException ignored) {
+                        UserLocalServiceUtil.getDefaultUserId(companyId)
+                    }
+                }
+                def wc = []
+                def adt = []
+                DDMTemplateLocalServiceUtil.getDDMTemplates(QueryUtil.ALL_POS, QueryUtil.ALL_POS).each { template ->
+                    // Ignore BASIC-WEB-CONTENT
+                    if (template.getClassNameId() == wcTemplateClassnameId && template.getTemplateKey() != 'BASIC-WEB-CONTENT') {
+                        wc << template
+                    // Only show custom ADTs
+                    } else if (!(template.getUserId() in defaultUserIds)) {
+                        adt << template
+                    }
+                }
+                webContentTemplates = wc
+                applicationDisplayTemplates = adt
+            }
+        }
 
-    def mapsIntegrationProperty = companyPortletPreferences.getValue(mapProviderKey, null);
+        // Questions keys
+        uasGuard(['data_companies_count']) {
+            println UASUtils.toCSVLine("data_companies_count", "${CompanyLocalServiceUtil.getCompaniesCount()}", "")
+        }
+        uasGuard(['data_custom_application_display_templates_adt_count', 'data_custom_web_content_templates_wc_count']) {
+            loadTemplates()
+            println UASUtils.toCSVLine("data_custom_application_display_templates_adt_count", "${applicationDisplayTemplates.size()}", "")
+            println UASUtils.toCSVLine("data_custom_web_content_templates_wc_count", "${webContentTemplates.size()}", "")
+        }
+        if (variant == '7.4') {
+            println UASUtils.toCSVLine("data_ddm_contents_count", "", "n/a (deprecated in 7.4+)")
+            uasGuard(['data_ddm_fields_count']) {
+                println UASUtils.toCSVLine("data_ddm_fields_count", "${uasClass('com.liferay.dynamic.data.mapping.service.DDMFieldLocalServiceUtil').getDDMFieldsCount()}", "")
+            }
+        } else {
+            uasGuard(['data_ddm_contents_count']) {
+                println UASUtils.toCSVLine("data_ddm_contents_count", "${uasClass('com.liferay.dynamic.data.mapping.service.DDMContentLocalServiceUtil').getDDMContentsCount()}", "") // this question keys is not present in 7.4 script
+            }
+        }
+        uasGuard(['data_ddm_structures_count']) {
+            println UASUtils.toCSVLine("data_ddm_structures_count", "${DDMStructureLocalServiceUtil.getDDMStructuresCount()}", "")
+        }
+        uasGuard(['data_ddm_templates_count']) {
+            println UASUtils.toCSVLine("data_ddm_templates_count", "${DDMTemplateLocalServiceUtil.getDDMTemplatesCount()}", "")
+        }
+        uasGuard(['data_dl_files_count']) {
+            println UASUtils.toCSVLine("data_dl_files_count", "${DLFileEntryLocalServiceUtil.getDLFileEntriesCount()}", "")
+        }
+        if (variant != '7.0') {
+            uasGuard(['data_fragments_count']) {
+                println UASUtils.toCSVLine("data_fragments_count", "${uasClass('com.liferay.fragment.service.FragmentEntryLocalServiceUtil').getFragmentEntriesCount()}", "")
+            }
+        }
+        uasGuard(['data_journal_articles_count']) {
+            println UASUtils.toCSVLine("data_journal_articles_count", "${JournalArticleLocalServiceUtil.getJournalArticlesCount()}", "")
+        }
+        uasGuard(['data_layouts_count']) {
+            println UASUtils.toCSVLine("data_layouts_count", "${countOf('layouts') { LayoutLocalServiceUtil.getLayoutsCount() }}", "")
+        }
+        uasGuard(['data_layouts_friendly_url_count']) {
+            println UASUtils.toCSVLine("data_layouts_friendly_url_count", "${LayoutFriendlyURLLocalServiceUtil.getLayoutFriendlyURLsCount()}", "")
+        }
+        if (variant != '7.0') {
+            uasGuard(['data_page_templates_count']) {
+                println UASUtils.toCSVLine("data_page_templates_count", "${uasClass('com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil').getLayoutPageTemplateEntriesCount()}", "")
+            }
+        }
+        uasGuard(['data_used_custom_portlets_count', 'data_used_liferay_portlets_count']) {
+            // Distinct portlet IDs only, instead of loading every portlet preferences row into memory
+            def portletIdQuery = PortletPreferencesLocalServiceUtil.dynamicQuery()
+            portletIdQuery.setProjection(ProjectionFactoryUtil.distinct(ProjectionFactoryUtil.property('portletId')))
+            def portletIds = PortletPreferencesLocalServiceUtil.dynamicQuery(portletIdQuery).collect {
+                (it as String) - ~/_INSTANCE.*/
+            }.unique().sort()
+            def liferayPortlets = portletIds.findAll { it.contains('liferay') }
+            def customPortlets = portletIds.findAll { !it.contains('liferay') }
+            println UASUtils.toCSVLine("data_used_custom_portlets_count", "${customPortlets.size()}", "\n${customPortlets.collect { "      * ${it}" }.join('\n')}")
+            println UASUtils.toCSVLine("data_used_liferay_portlets_count", "${liferayPortlets.size()}", "\n${liferayPortlets.collect { "      * ${it}" }.join('\n')}")
+        }
+        println UASUtils.toCSVLine("data_user_private_pages_enabled", "${com.liferay.portal.kernel.util.PropsUtil.get('layout.user.private.layouts.enabled')}", "")
+        println UASUtils.toCSVLine("data_user_public_pages_enabled", "${com.liferay.portal.kernel.util.PropsUtil.get('layout.user.public.layouts.enabled')}", "")
+        uasGuard(['data_users_count', 'data_users_layouts_count', 'data_custom_layouts_count']) {
+            def usersCount = countOf('users') { UserLocalServiceUtil.getUsersCount() }
+            def layoutsCount = countOf('layouts') { LayoutLocalServiceUtil.getLayoutsCount() }
+            println UASUtils.toCSVLine("data_users_count", "${usersCount}", "")
 
-    if (mapsIntegrationProperty == googleMapsKey) {
-        googleMapsIntegration = true;
-    }
-}
+            if (layoutsCount > usersCount) {
+                println UASUtils.toCSVLine("data_users_layouts_count", "${(usersCount * 2)}", "")
+                println UASUtils.toCSVLine("data_custom_layouts_count", "${(layoutsCount - (usersCount * 2))}", "")
+            }
+        }
 
-println UASUtils.toCSVLine('data_google_maps_integration', "${googleMapsIntegration}" , "");
+        // There may be many more, but ROM calculator only asks about VM and FTL, so only make sure these are put as CSV lines
+        def ddmTemplatesSupportedLangs = [TemplateConstants.LANG_TYPE_VM, TemplateConstants.LANG_TYPE_FTL]
+        uasGuard(ddmTemplatesSupportedLangs.collect { "data_wc_templates_by_lang_${it}_count".toString() } +
+                ddmTemplatesSupportedLangs.collect { "data_adt_templates_by_lang_${it}_count".toString() }) {
+            loadTemplates()
+            def webContentTemplatesByLang = webContentTemplates.groupBy { it.language }
+            ddmTemplatesSupportedLangs.each {
+                webContentTemplatesByLang.putIfAbsent(it, Collections.emptyList())
+            }
+            def adtTemplatesByLang = applicationDisplayTemplates.groupBy { it.language }
+            ddmTemplatesSupportedLangs.each {
+                adtTemplatesByLang.putIfAbsent(it, Collections.emptyList())
+            }
 
-// Expando Fields
-int expandoTablesCount = 0;
-String expandoTableDetails = "ExpandoClassName, ExpandoColumnsCount";
-List<ExpandoTable> expandoTables =
-        ExpandoTableLocalServiceUtil.getExpandoTables(QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+            webContentTemplatesByLang.each { lang, templates ->
+                println UASUtils.toCSVLine(
+                        "data_wc_templates_by_lang_${lang}_count", templates.size(),
+                        "Custom WC templates with '${lang}' as the language:\n${templates.collect { " - ${it.nameCurrentValue} { templateKey=${it.templateKey}, templateId=${it.templateId} }" }.join('\n')}")
+            }
 
-for (e in  expandoTables) {
-    String expandoClassName =
-            ClassNameLocalServiceUtil.fetchByClassNameId(e.getClassNameId()).getClassName();
+            adtTemplatesByLang.each { lang, templates ->
+                println UASUtils.toCSVLine(
+                        "data_adt_templates_by_lang_${lang}_count", templates.size(),
+                        "Custom ADT templates with '${lang}' as the language:\n${templates.collect { " - ${it.nameCurrentValue} { templateKey=${it.templateKey}, templateId=${it.templateId} }" }.join('\n')}")
+            }
+        }
 
-    ExpandoBridge expandoBridge =
-            ExpandoBridgeFactoryUtil.getExpandoBridge(CompanyThreadLocal.getCompanyId(), expandoClassName, 0L);
+        def liveGroups = [:]
+        def liveGroupOf = { group ->
+            if (!liveGroups.containsKey(group.groupId)) {
+                def liveGroup = group
+                try {
+                    liveGroup = StagingUtil.getLiveGroup(group) ?: group
+                } catch (Throwable ignored) {
+                    try {
+                        liveGroup = StagingUtil.getLiveGroup(group.groupId) ?: group
+                    } catch (Throwable ignored2) {
+                    }
+                }
+                liveGroups[group.groupId] = liveGroup
+            }
+            return liveGroups[group.groupId]
+        }
 
-    if (expandoBridge.getAttributes().size() > 0) {
-        expandoTableDetails <<= "\n\t${expandoClassName}, ${expandoBridge.getAttributes().size()}"
-        expandoTablesCount++;
-    }
-}
+        uasGuard(['data_sites_count', 'data_sites_details']) {
+            def siteDetails = '' << ''
+            def childGroupCount = 0
 
-println UASUtils.toCSVLine('expando_count', "${expandoTablesCount}", "")
-println UASUtils.toCSVLine('expando_tables_info', "", "${expandoTableDetails.toString()}")
+            siteDetails <<= "type, companyId, groupId, friendlyURL, name, staging, parent site name"
 
+            loadSites().each { site ->
+                def parentGroupName = "N/A"
+                def type = "PARENT_GROUP"
+                def parentGroupId = site.parentGroupId
 
-// Additional 7.4 / Quarterly Release data points (each one guarded, as availability varies per release)
-def _countVia = { String csvKey, String comment, Closure counter ->
-    try {
-        println UASUtils.toCSVLine(csvKey, "${counter()}", comment)
-    } catch (Throwable t) {
-        println UASUtils.toCSVLine(csvKey, "", "n/a - ${t}")
-    }
-}
+                if (!parentGroupId == 0) {
+                    type = "CHILD_GROUP"
+                    parentGroupName = GroupLocalServiceUtil.getGroup(parentGroupId).getName()
+                    childGroupCount++
+                }
 
-_countVia('data_forms_count', 'Via DDMFormInstanceLocalServiceUtil::getDDMFormInstancesCount') {
-    com.liferay.dynamic.data.mapping.service.DDMFormInstanceLocalServiceUtil.getDDMFormInstancesCount()
-}
-_countVia('data_form_records_count', 'Via DDMFormInstanceRecordLocalServiceUtil::getDDMFormInstanceRecordsCount') {
-    com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalServiceUtil.getDDMFormInstanceRecordsCount()
-}
-_countVia('data_layout_page_template_structures_count', 'Content pages / page templates / master pages structures, via LayoutPageTemplateStructureLocalServiceUtil') {
-    com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalServiceUtil.getLayoutPageTemplateStructuresCount()
-}
-_countVia('data_asset_entries_count', 'Via AssetEntryLocalServiceUtil::getAssetEntriesCount') {
-    com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil.getAssetEntriesCount()
-}
-_countVia('data_dl_file_versions_count', 'Via DLFileVersionLocalServiceUtil::getDLFileVersionsCount') {
-    com.liferay.document.library.kernel.service.DLFileVersionLocalServiceUtil.getDLFileVersionsCount()
-}
-_countVia('data_organizations_count', 'Via OrganizationLocalServiceUtil::getOrganizationsCount') {
-    OrganizationLocalServiceUtil.getOrganizationsCount()
-}
-_countVia('data_user_groups_count', 'Via UserGroupLocalServiceUtil::getUserGroupsCount') {
-    UserGroupLocalServiceUtil.getUserGroupsCount()
-}
-_countVia('data_roles_count', 'Via RoleLocalServiceUtil::getRolesCount') {
-    RoleLocalServiceUtil.getRolesCount()
-}
-_countVia('data_virtual_hosts_count', 'Via VirtualHostLocalServiceUtil::getVirtualHostsCount') {
-    VirtualHostLocalServiceUtil.getVirtualHostsCount()
-}
-   
+                siteDetails <<= "\n\t${type}, ${site.companyId}, ${site.groupId}, ${site.friendlyURL}, ${site.nameCurrentValue}, ${liveGroupOf(site).staged}, ${parentGroupName}"
+            }
+
+            // data_sites_count
+            def siteSize = sites.size()
+            println UASUtils.toCSVLine('data_sites_count', "${siteSize}", "${siteDetails.toString()}")
+            println UASUtils.toCSVLine('data_sites_details', "", "${siteSize - childGroupCount} Parent Sites, ${childGroupCount} Child Sites")
+        }
+
+        uasGuard(['data_staging_enabled']) {
+            // data_staging_enabled
+            println UASUtils.toCSVLine('data_staging_enabled', "${loadSites().any { liveGroupOf(it).staged }}", 'see data_sites_count for more details')
+        }
+
+        if (variant == '7.3') {
+            uasGuard(['data_app_builder_apps_count']) {
+                // data_app_builder_apps_count
+                def appBuilderClass = uasClass('com.liferay.app.builder.service.AppBuilderAppLocalServiceUtil')
+                println UASUtils.toCSVLine('data_app_builder_apps_count', appBuilderClass ? "${appBuilderClass.getAppBuilderAppsCount()}" : '',
+                        appBuilderClass ? '' : 'n/a - App Builder not available')
+            }
+        }
+
+        // data_file_store_method
+        println UASUtils.toCSVLine('data_file_store_method', com.liferay.portal.kernel.util.PropsUtil.get('dl.store.impl'), "")
+        // data_live_users_enabled
+        println UASUtils.toCSVLine('data_live_users_enabled', com.liferay.portal.kernel.util.PropsUtil.get('live.users.enabled'), "")
+
+        uasGuard(['data_google_maps_integration']) {
+            // data_google_maps_integration
+            def googleMapsIntegration = false
+            def mapProviderKey = "MAP_PROVIDER_KEY"
+            def googleMapsKey = "GoogleMaps"
+
+            // Enabled via Site Settings - Advanced Tab (only groups whose settings mention the map provider)
+            def mapQuery = GroupLocalServiceUtil.dynamicQuery()
+            mapQuery.add(RestrictionsFactoryUtil.like('typeSettings', "%${mapProviderKey}%".toString()))
+            for (def group : GroupLocalServiceUtil.dynamicQuery(mapQuery)) {
+                def typeSettings = group.getTypeSettingsProperty(mapProviderKey)
+
+                if (!Validator.isBlank(typeSettings) && typeSettings == googleMapsKey) {
+                    googleMapsIntegration = true
+                }
+            }
+
+            // Enabled via Instance Settings --> Miscellaneous
+            for (def companyId : companyIds) {
+                def companyPortletPreferences = PrefsPropsUtil.getPreferences(companyId)
+
+                def mapsIntegrationProperty = companyPortletPreferences.getValue(mapProviderKey, null)
+
+                if (mapsIntegrationProperty == googleMapsKey) {
+                    googleMapsIntegration = true
+                }
+            }
+
+            println UASUtils.toCSVLine('data_google_maps_integration', "${googleMapsIntegration}", "")
+        }
+
+        uasGuard(['expando_count', 'expando_tables_info']) {
+            // Expando Fields
+            int expandoTablesCount = 0
+            String expandoTableDetails = "ExpandoClassName, ExpandoColumnsCount"
+            List<ExpandoTable> expandoTables =
+                    ExpandoTableLocalServiceUtil.getExpandoTables(QueryUtil.ALL_POS, QueryUtil.ALL_POS)
+
+            for (e in expandoTables) {
+                try {
+                    String expandoClassName =
+                            ClassNameLocalServiceUtil.fetchByClassNameId(e.getClassNameId()).getClassName()
+
+                    ExpandoBridge expandoBridge =
+                            ExpandoBridgeFactoryUtil.getExpandoBridge(CompanyThreadLocal.getCompanyId(), expandoClassName, 0L)
+
+                    if (expandoBridge.getAttributes().size() > 0) {
+                        expandoTableDetails <<= "\n\t${expandoClassName}, ${expandoBridge.getAttributes().size()}"
+                        expandoTablesCount++
+                    }
+                } catch (Throwable ignored) {
+                    // a single broken expando table must not hide the others
+                }
+            }
+
+            println UASUtils.toCSVLine('expando_count', "${expandoTablesCount}", "")
+            println UASUtils.toCSVLine('expando_tables_info', "", "${expandoTableDetails.toString()}")
+        }
+
+        if (variant == '7.4') {
+            // Additional 7.4 / Quarterly Release data points
+            [
+                    [key: 'data_forms_count', className: 'com.liferay.dynamic.data.mapping.service.DDMFormInstanceLocalServiceUtil', method: 'getDDMFormInstancesCount', comment: 'Via DDMFormInstanceLocalServiceUtil::getDDMFormInstancesCount'],
+                    [key: 'data_form_records_count', className: 'com.liferay.dynamic.data.mapping.service.DDMFormInstanceRecordLocalServiceUtil', method: 'getDDMFormInstanceRecordsCount', comment: 'Via DDMFormInstanceRecordLocalServiceUtil::getDDMFormInstanceRecordsCount'],
+                    [key: 'data_layout_page_template_structures_count', className: 'com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalServiceUtil', method: 'getLayoutPageTemplateStructuresCount', comment: 'Content pages / page templates / master pages structures, via LayoutPageTemplateStructureLocalServiceUtil'],
+                    [key: 'data_asset_entries_count', className: 'com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil', method: 'getAssetEntriesCount', comment: 'Via AssetEntryLocalServiceUtil::getAssetEntriesCount'],
+                    [key: 'data_dl_file_versions_count', className: 'com.liferay.document.library.kernel.service.DLFileVersionLocalServiceUtil', method: 'getDLFileVersionsCount', comment: 'Via DLFileVersionLocalServiceUtil::getDLFileVersionsCount'],
+                    [key: 'data_organizations_count', className: 'com.liferay.portal.kernel.service.OrganizationLocalServiceUtil', method: 'getOrganizationsCount', comment: 'Via OrganizationLocalServiceUtil::getOrganizationsCount'],
+                    [key: 'data_user_groups_count', className: 'com.liferay.portal.kernel.service.UserGroupLocalServiceUtil', method: 'getUserGroupsCount', comment: 'Via UserGroupLocalServiceUtil::getUserGroupsCount'],
+                    [key: 'data_roles_count', className: 'com.liferay.portal.kernel.service.RoleLocalServiceUtil', method: 'getRolesCount', comment: 'Via RoleLocalServiceUtil::getRolesCount'],
+                    [key: 'data_virtual_hosts_count', className: 'com.liferay.portal.kernel.service.VirtualHostLocalServiceUtil', method: 'getVirtualHostsCount', comment: 'Via VirtualHostLocalServiceUtil::getVirtualHostsCount'],
+            ].each { check ->
+                uasGuard([check.key]) {
+                    def clazz = uasClass(check.className)
+                    if (clazz == null) {
+                        println UASUtils.toCSVLine(check.key, '', "n/a - ${check.className} not available in this release")
+                    } else {
+                        println UASUtils.toCSVLine(check.key, "${clazz."${check.method}"()}", check.comment)
+                    }
+                }
+            }
+        }
     } catch (Throwable t) {
         println "UAS ERROR: Execution failed for topic script '2_data.groovy': ${t}"
         println t.getStackTrace().collect { "    ${it}" }.join('\n')
-        
+
         // swallow the exception, to continue with run of the next topic file, if any
     }
 
     println ""
 } // END invoke__2_data_groovy()
-                
+
 // the function 'invoke__2_data_groovy' will be invoked at the very end of the 'dxp_2023_q4-all.groovy'
-// invoke__2_data_groovy([ debug: false ])              
+// invoke__2_data_groovy([ debug: false ])
 // END included '2_data.groovy'
 
-// BEGIN included '3_database_info.groovy'  
+// BEGIN included '3_database_info.groovy'
 
-// Imports for '3_database_info.groovy' 
-import com.liferay.portal.kernel.dao.db.DB;
-import com.liferay.portal.kernel.dao.db.DBManagerUtil;
-import com.liferay.portal.kernel.dao.db.DBType;
+// Imports for '3_database_info.groovy'
+import com.liferay.portal.kernel.dao.db.DB
+import com.liferay.portal.kernel.dao.db.DBManagerUtil
+import com.liferay.portal.kernel.dao.db.DBType
 import com.liferay.portal.kernel.dao.jdbc.DataAccess
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-              
+import java.sql.Connection
+import java.sql.DatabaseMetaData
+import java.sql.ResultSet
+
 // Wrapper function for '3_database_info.groovy'
 def invoke__3_database_info_groovy(Map<String, Object> uasContext) {
 
     try {
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.dao.db.DB;
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.dao.db.DBManagerUtil;
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.dao.db.DBType;
-//__GRADLE_COMMENT__ import com.liferay.portal.kernel.dao.jdbc.DataAccess
+        // Rows of every table, read-only. Each count has its own statement (always closed) and a timeout, so one
+        // very large or locked table cannot block the report; tables that cannot be counted are listed separately.
+        int queryTimeoutSeconds = (uasContext['tableCountTimeoutSeconds'] ?: 120) as int
 
-//__GRADLE_COMMENT__ import java.sql.Connection;
-//__GRADLE_COMMENT__ import java.sql.DatabaseMetaData;
-//__GRADLE_COMMENT__ import java.sql.PreparedStatement;
-//__GRADLE_COMMENT__ import java.sql.ResultSet;
-//__GRADLE_COMMENT__ import java.util.ArrayList;
-//__GRADLE_COMMENT__ import java.util.Collections;
-//__GRADLE_COMMENT__ import java.util.List;
+        Connection connection = null
+        ResultSet rs = null
 
-try {
-    Connection connection = null;
-    ResultSet rs = null;
-    PreparedStatement ps = null;
+        try {
+            DB db = DBManagerUtil.getDB()
+            DBType dbType = db.getDBType()
 
-    DB db = DBManagerUtil.getDB();
+            connection = DataAccess.getConnection()
 
-    DBType dbType = db.getDBType();
+            DatabaseMetaData metadata = connection.getMetaData()
 
-    try {
-        connection = DataAccess.getConnection();
+            String catalog = connection.getCatalog()
+            String schema = null
 
-        DatabaseMetaData metadata = connection.getMetaData();
+            if ((catalog == null) && (dbType.equals(DBType.ORACLE))) {
+                catalog = metadata.getUserName()
+                schema = catalog
+            }
 
-        String catalog = connection.getCatalog();
-        String schema = null;
+            rs = metadata.getTables(catalog, schema, "%", null)
 
-        if ((catalog == null) && (dbType.equals(DBType.ORACLE))) {
-            catalog = metadata.getUserName();
-            schema = catalog;
-        }
-
-        rs = metadata.getTables(catalog, schema, "%", null);
-
-        List<TableInfo> tables = new ArrayList<TableInfo>();
-
-        while (rs.next()) {
-            String tableName = rs.getString("TABLE_NAME");
-            String tableType = rs.getString("TABLE_TYPE");
-
-            if (dbType.equals(DBType.MARIADB)) {
-                if (!tableType.equals("BASE TABLE")) {
-                    continue
+            def tableNames = []
+            while (rs.next()) {
+                String tableType = rs.getString("TABLE_TYPE")
+                if ("TABLE".equals(tableType) || "BASE TABLE".equals(tableType)) {
+                    tableNames << rs.getString("TABLE_NAME")
                 }
             }
-            else if (!"TABLE".equals(tableType)) {
-                continue;
-            }
 
-            ResultSet rs2 = null;
+            def tables = []
+            def unreadable = []
 
-            try {
-                ps = connection.prepareStatement(
-                    "select count(*) from " + tableName);
-
-                rs2 = ps.executeQuery();
-
-                if (rs2.next()) {
-                    tables.add(new TableInfo(tableName, rs2.getInt(1)));
+            tableNames.each { String tableName ->
+                def statement = null
+                ResultSet countResult = null
+                try {
+                    statement = connection.createStatement()
+                    try {
+                        statement.setQueryTimeout(queryTimeoutSeconds)
+                    } catch (Throwable ignored) {
+                    }
+                    countResult = statement.executeQuery("select count(*) from " + tableName)
+                    if (countResult.next()) {
+                        tables << [name: tableName, rows: countResult.getLong(1)]
+                    }
+                } catch (Throwable t) {
+                    unreadable << "${tableName}: ${t.class.simpleName}${t.message ? ' - ' + t.message.readLines().find() : ''}"
+                } finally {
+                    DataAccess.cleanUp(statement, countResult)
                 }
             }
-            catch (Exception e) {
-                System.out.println(
-                    "Unable to recover data from " + tableName);
-            }
-            finally {
-                DataAccess.cleanUp(rs2);
-            }
+
+            // Same order as before: most rows first, then by name
+            tables.sort { a, b -> a.rows == b.rows ? a.name <=> b.name : b.rows <=> a.rows }
+
+            def tableDetails = new StringBuilder("tableName, rowsCount\n")
+            tables.each { tableDetails.append("${it.name}, ${it.rows}\n") }
+
+            println UASUtils.toCSVLine('data_tables_count', "${tables.size()}", "")
+            println UASUtils.toCSVLine('data_tables_info', "", "${tableDetails.toString()}")
+            println UASUtils.toCSVLine('data_tables_unreadable_count', unreadable.size(),
+                    "Tables that could not be counted (query timeout ${queryTimeoutSeconds}s or error):\n${unreadable.collect { " - ${it}" }.join('\n')}")
+        }
+        finally {
+            DataAccess.cleanUp(connection, null, rs)
         }
 
-        Collections.sort(tables);
-
-        def tableDetails = "tableName, rowsCount\n"
-
-        for(TableInfo table : tables) {
-            tableDetails <<= table;
-            tableDetails <<= "\n";
-        }
-
-        println UASUtils.toCSVLine('data_tables_count', "${tables.size}", "");
-        println UASUtils.toCSVLine('data_tables_info', "", "${tableDetails.toString()}");
-    }
-    finally {
-        DataAccess.cleanUp(connection, ps, rs);
-    }
-
-    println "";
-}
-catch(Exception exception) {
-    System.out.println(exception.getMessage());
-}
-   
+        println ""
     } catch (Throwable t) {
         println "UAS ERROR: Execution failed for topic script '3_database_info.groovy': ${t}"
         println t.getStackTrace().collect { "    ${it}" }.join('\n')
-        
+
         // swallow the exception, to continue with run of the next topic file, if any
     }
 
     println ""
 } // END invoke__3_database_info_groovy()
-                
+
 // the function 'invoke__3_database_info_groovy' will be invoked at the very end of the 'dxp_2023_q4-all.groovy'
-// invoke__3_database_info_groovy([ debug: false ])              
+// invoke__3_database_info_groovy([ debug: false ])
 // END included '3_database_info.groovy'
 
 // BEGIN included '4_custom_code.groovy'  
 
 // Imports for '4_custom_code.groovy' 
-import com.liferay.dynamic.data.mapping.service.DDMContentLocalService
 import com.liferay.portal.deploy.DeployUtil
 import com.liferay.portal.deploy.auto.PluginAutoDeployListenerHelper
 import com.liferay.portal.kernel.dao.orm.QueryUtil
@@ -1022,7 +1152,6 @@ import org.osgi.framework.FrameworkUtil
 def invoke__4_custom_code_groovy(Map<String, Object> uasContext) {
 
     try {
-//__GRADLE_COMMENT__ import com.liferay.dynamic.data.mapping.service.DDMContentLocalService
 //__GRADLE_COMMENT__ import com.liferay.portal.deploy.DeployUtil
 //__GRADLE_COMMENT__ import com.liferay.portal.deploy.auto.PluginAutoDeployListenerHelper
 //__GRADLE_COMMENT__ import com.liferay.portal.kernel.dao.orm.QueryUtil
@@ -1146,6 +1275,9 @@ uasUtils.debugCSVLine 'staticLpkgOverrideModulesDir', staticLpkgOverrideModulesD
 
 // https://github.com/liferay/liferay-portal/blob/7.2.x/modules/apps/marketplace/marketplace-service/src/main/java/com/liferay/marketplace/service/impl/AppLocalServiceImpl.java#L133
 def LIFERAY_HOOK_XML_WEBAPP_PATH = 'WEB-INF/liferay-hook.xml'
+def customHookPlugins = []
+
+uasGuard(['custom_code_hook_plugins_count']) {
 
 def pureHookPlugins = allUniqueInstalledPlugins.findAll {
     'hook' in it.types
@@ -1191,7 +1323,7 @@ def portletPluginsWithHooks = allUniqueInstalledPlugins.findAll {
 // TODO developers might leave 'groupId == liferay' even for their custom hooks, because it's typically generated this way by the hook template (plugins SDK / Blae archetype). We might inadvertently exclude these custom plugins, by mistake.
 def hookPlugins = (pureHookPlugins + portletPluginsWithHooks).unique { it.moduleId }
 def liferayHookPlugins = hookPlugins.findAll { it.groupId == 'liferay' || _isLiferayShippedPlugin(it) }
-def customHookPlugins = hookPlugins.findAll { !(it.moduleId in liferayHookPlugins*.moduleId) }
+customHookPlugins = hookPlugins.findAll { !(it.moduleId in liferayHookPlugins*.moduleId) }
 
 uasUtils.debugCSVLine 'hookPlugins', hookPlugins
 uasUtils.debugCSVLine 'liferayHookPlugins', liferayHookPlugins
@@ -1203,6 +1335,9 @@ println UASUtils.toCSVLine(
 
 // Portlets
 
+}
+
+uasGuard(['custom_code_portlet_plugins_count', 'custom_code_portlets_count']) {
 def portletPlugins = allUniqueInstalledPlugins.findAll {
     'portlet' in it.types
 }
@@ -1259,6 +1394,9 @@ println UASUtils.toCSVLine(
 
 // Layout templates
 
+}
+
+uasGuard(['custom_code_layout_template_plugins_count', 'custom_code_layout_templates_count', 'custom_code_layout_templates_by_lang_vm_count', 'custom_code_layout_templates_by_lang_ftl_count']) {
 def liferayLayoutTemplatePackages = [] // the stock ones seem not to be placed inside a "plugin"?
 uasUtils.debugCSVLine 'liferayLayoutTemplatePackages', liferayLayoutTemplatePackages
 
@@ -1313,6 +1451,9 @@ customLayoutTemplatesByLang.each { lang, langLayoutTemplates ->
 
 // OSGi Modules
 
+}
+
+uasGuard(['custom_code_osgi_modules_count']) {
 def customOSGiModulesDir = new File(_PROPS_VALUES_MODULE_FRAMEWORK_MODULES_DIR)
 def customOSGiModules = (customOSGiModulesDir.listFiles() ?: []).findAll { it.name.endsWith('.jar') }
 
@@ -1325,6 +1466,9 @@ println UASUtils.toCSVLine(
 
 // Themes
 
+}
+
+uasGuard(['custom_code_theme_plugins_count', 'custom_code_themes_count', 'custom_code_themes_by_lang_vm_count', 'custom_code_themes_by_lang_ftl_count', 'custom_code_themes_by_lang_jsp_count']) {
 def themePlugins = allUniqueInstalledPlugins.findAll {
     'theme' in it.types
 }
@@ -1374,6 +1518,9 @@ customThemesByLang.each { lang, langThemes ->
 
 // Webs
 
+}
+
+uasGuard(['custom_code_web_plugins_count']) {
 def webPlugins = allUniqueInstalledPlugins.findAll {
     'web' in it.types || it.name.endsWith('-web')
 }
@@ -1385,6 +1532,9 @@ println UASUtils.toCSVLine(
 
 // Features of Liferay Hook extension point
 
+}
+
+uasGuard(['custom_code_hook_extensions_custom_jsp', 'custom_code_hook_extensions_servlet_filters', 'custom_code_hook_extensions_struts_actions', 'custom_code_hook_extensions_indexer_post_processors', 'custom_code_hook_extensions_service_wrappers', 'custom_code_hook_extensions_override_portal_properties', 'custom_code_hook_extensions_application_adapters', 'custom_code_hook_extensions_override_language_properties']) {
 Map<String, String> hookContextToLiferayHookXmlContent = customHookPlugins.collectEntries {
     def contextName = it.context
 
@@ -1516,6 +1666,9 @@ println UASUtils.toCSVLine(
 // Liferay Service Builder
 //
 
+}
+
+uasGuard(['custom_code_service_builder_modules']) {
 def releases = ReleaseLocalServiceUtil.getReleases(QueryUtil.ALL_POS, QueryUtil.ALL_POS)
 def isLiferayRelease = { Release r ->
     PluginPackage plugin = allUniqueInstalledPlugins.find { it.context == r.servletContextName }
@@ -1544,6 +1697,9 @@ println UASUtils.toCSVLine(
 // Fragment-Host count & info
 //
 
+}
+
+uasGuard(['custom_code_fragment_hosts_count', 'custom_code_fragment_hosts_info']) {
 def collectFiles
 collectFiles = {
     bundle, path, fileList ->
@@ -1563,7 +1719,7 @@ collectFiles = {
         }
 }
 
-BundleContext bundleContext = FrameworkUtil.getBundle(DDMContentLocalService.class).getBundleContext()
+BundleContext bundleContext = uasBundleContext()
 
 def fragmentHostInfo = ""
 def fragmentHostCount = 0
@@ -1590,6 +1746,8 @@ for (Bundle bundle : bundleContext.getBundles()) {
 
 println UASUtils.toCSVLine("custom_code_fragment_hosts_count", fragmentHostCount, "")
 println UASUtils.toCSVLine("custom_code_fragment_hosts_info", fragmentHostInfo, "")
+}
+
 
 
    
@@ -1611,9 +1769,6 @@ println UASUtils.toCSVLine("custom_code_fragment_hosts_info", fragmentHostInfo, 
 
 // Imports for '5_new_items.groovy' 
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil
-import com.liferay.object.service.ObjectDefinitionLocalServiceUtil
-import com.liferay.object.service.ObjectEntryLocalServiceUtil
-import com.liferay.segments.service.SegmentsEntryLocalServiceUtil
 import org.jsoup.Jsoup
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil
 import com.liferay.portal.kernel.module.util.SystemBundleUtil
@@ -1647,6 +1802,9 @@ def invoke__5_new_items_groovy(Map<String, Object> uasContext) {
 
     try {
 // Objects
+def ObjectDefinitionLocalServiceUtil = uasClass('com.liferay.object.service.ObjectDefinitionLocalServiceUtil')
+def ObjectEntryLocalServiceUtil = uasClass('com.liferay.object.service.ObjectEntryLocalServiceUtil')
+def SegmentsEntryLocalServiceUtil = uasClass('com.liferay.segments.service.SegmentsEntryLocalServiceUtil')
 
 //__GRADLE_COMMENT__ import com.liferay.portal.kernel.service.CompanyLocalServiceUtil
 //__GRADLE_COMMENT__ import com.liferay.object.service.ObjectDefinitionLocalServiceUtil
@@ -1749,7 +1907,11 @@ try {
     println UASUtils.toCSVLine(
             'newitems_custom_object_definitions_info', grandTotalCustomCount, customObjectDetails.toString())
 } catch (Throwable t) {
-    println UASUtils.toCSVLine('newitems_object_entry_definitions', '', "n/a - ${t}")
+    ['newitems_object_entry_definitions', 'newitems_total_system_object_entry_definition_count',
+     'newitems_total_custom_object_entry_definition_count', 'newitems_total_custom_object_entries_count',
+     'newitems_custom_object_definitions_info'].each { key ->
+        println UASUtils.toCSVLine(key, '', "n/a - ${t}")
+    }
 }
 
 
@@ -1784,33 +1946,30 @@ try {
 //__GRADLE_COMMENT__ import com.liferay.commerce.product.model.CPDefinition
 //__GRADLE_COMMENT__ import com.liferay.commerce.product.service.CPDefinitionLocalServiceUtil
 
-def globalCount = 0
+uasGuard(['newitems_total_commerce_products']) {
+    def cpDefinitionServiceClass = uasClass("com.liferay.commerce.product.service.CPDefinitionLocalServiceUtil")
 
-def cpDefinitionServiceClass = loadOptionalClass(
-    "com.liferay.commerce.product.service.CPDefinitionLocalServiceUtil",
-    "com.liferay.commerce.product.service")
-
-if (cpDefinitionServiceClass) {
-    try {
-        companies.each { company ->
-            long companyId = company.getCompanyId()
-
-            def cpDefinitions = cpDefinitionServiceClass.getCPDefinitions(-1, -1).findAll {
-                it.getCompanyId() == companyId
-            }
-
-            globalCount += cpDefinitions.size()
-        }
-
-
+    if (cpDefinitionServiceClass) {
         println UASUtils.toCSVLine(
-            'newitems_total_commerce_products', globalCount, "Total number of commerce product across all companies")
-    } catch (Throwable t) {
-        println UASUtils.toCSVLine('newitems_total_commerce_products', '', "n/a - ${t}")
+            'newitems_total_commerce_products', cpDefinitionServiceClass.getCPDefinitionsCount(), "Total number of commerce product across all companies")
+    } else {
+        // Commerce modules not active (deactivated, blacklisted or failed): read the table directly, if it exists
+        def connection = null
+        def statement = null
+        def result = null
+        try {
+            connection = com.liferay.portal.kernel.dao.jdbc.DataAccess.getConnection()
+            statement = connection.createStatement()
+            result = statement.executeQuery('select count(*) from CPDefinition')
+            result.next()
+            println UASUtils.toCSVLine(
+                'newitems_total_commerce_products', result.getLong(1), "Total number of commerce product across all companies (Commerce modules are not active: counted in the CPDefinition table)")
+        } catch (Throwable ignored) {
+            println UASUtils.toCSVLine('newitems_total_commerce_products', '', "n/a - Commerce is not active and the CPDefinition table does not exist")
+        } finally {
+            com.liferay.portal.kernel.dao.jdbc.DataAccess.cleanUp(connection, statement, result)
+        }
     }
-
-} else {
-    out.println("Commerce not available — skipping CPDefinition count")
 }
 
 
@@ -2078,47 +2237,75 @@ def invoke__6_deprecations_groovy(Map<String, Object> uasContext) {
                 [key: 'widget_asset_publisher', patterns: ['asset_publisher_web_portlet_assetpublisherportlet'], status: 'Asset Publisher: maintenance mode in 2024.Q4; its manual and dynamic selection options are deprecated, replaced by Collections'],
         ]
 
+        def projections = com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil
+        def restrictions = com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil
+        def layoutService = com.liferay.portal.kernel.service.LayoutLocalServiceUtil
+
         try {
-            def preferences
-            try {
-                preferences = com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil.getPortletPreferences()
-            } catch (MissingMethodException ignored) {
-                preferences = com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil.getPortletPreferences(-1, -1)
+            def preferencesService = com.liferay.portal.kernel.service.PortletPreferencesLocalServiceUtil
+            def matchesCheck = { String portletId ->
+                def id = portletId.toLowerCase()
+                id.startsWith('com_liferay_') && widgetChecks.any { check -> check.patterns.any { id.contains(it) } }
             }
-            // ownerType 3 = PortletKeys.PREFS_OWNER_TYPE_LAYOUT (widget placed on a page)
+
             def portletIdToPlids = [:]
-            preferences.each { p ->
-                if (p.ownerType == 3 && p.plid > 0) {
-                    def root = (p.portletId - ~/_INSTANCE.*/).toLowerCase()
-                    def plids = portletIdToPlids[root]
-                    if (plids == null) {
-                        plids = [] as Set
-                        portletIdToPlids[root] = plids
+            def addPlid = { String portletId, long plid ->
+                def root = (portletId.trim() - ~/_INSTANCE.*/).toLowerCase()
+                def plids = portletIdToPlids[root]
+                if (plids == null) {
+                    plids = [] as Set
+                    portletIdToPlids[root] = plids
+                }
+                plids << plid
+            }
+
+            // Widgets placed on pages (ownerType 3 = PortletKeys.PREFS_OWNER_TYPE_LAYOUT): the distinct portlet IDs
+            // first, then the pages of the deprecated ones only, instead of loading every preferences row
+            def idQuery = preferencesService.dynamicQuery()
+            idQuery.add(restrictions.eq('ownerType', 3))
+            idQuery.setProjection(projections.distinct(projections.property('portletId')))
+            preferencesService.dynamicQuery(idQuery).collect { it as String }.findAll { matchesCheck(it) }.each { portletId ->
+                def plidQuery = preferencesService.dynamicQuery()
+                plidQuery.add(restrictions.eq('ownerType', 3))
+                plidQuery.add(restrictions.eq('portletId', portletId))
+                plidQuery.setProjection(projections.distinct(projections.property('plid')))
+                preferencesService.dynamicQuery(plidQuery).each { plid ->
+                    if ((plid as long) > 0) {
+                        addPlid(portletId, plid as long)
                     }
-                    plids << p.plid
                 }
             }
 
             // Widgets placed on widget pages are also stored in the page layout (column-N=portletId,...), even when
-            // no preferences exist yet (e.g. a deprecated widget that is hidden and never rendered)
-            com.liferay.portal.kernel.service.LayoutLocalServiceUtil.getLayouts(-1, -1).findAll { it.type == 'portlet' }.each { layout ->
-                try {
-                    layout.typeSettingsProperties.each { key, value ->
-                        if (key.toString().startsWith('column-') || key.toString().startsWith('nested-column-')) {
-                            value.toString().tokenize(',').each { portletId ->
-                                def root = (portletId.trim() - ~/_INSTANCE.*/).toLowerCase()
-                                if (root) {
-                                    def plids = portletIdToPlids[root]
-                                    if (plids == null) {
-                                        plids = [] as Set
-                                        portletIdToPlids[root] = plids
+            // no preferences exist yet (e.g. a deprecated widget that is hidden and never rendered). Read in batches.
+            def widgetPagesQuery = { ->
+                def query = layoutService.dynamicQuery()
+                query.add(restrictions.eq('type', 'portlet'))
+                query
+            }
+            long widgetPages = layoutService.dynamicQueryCount(widgetPagesQuery())
+            int batchSize = 500
+            for (int batchStart = 0; batchStart < widgetPages; batchStart += batchSize) {
+                def query = widgetPagesQuery()
+                query.setProjection(projections.projectionList()
+                        .add(projections.property('plid'))
+                        .add(projections.property('typeSettings')))
+                query.addOrder(com.liferay.portal.kernel.dao.orm.OrderFactoryUtil.asc('plid'))
+                layoutService.dynamicQuery(query, batchStart, batchStart + batchSize).each { row ->
+                    long plid = row[0] as long
+                    (row[1] ?: '').toString().readLines().each { line ->
+                        int separator = line.indexOf('=')
+                        if (separator > 0) {
+                            def key = line.substring(0, separator)
+                            if (key.startsWith('column-') || key.startsWith('nested-column-')) {
+                                line.substring(separator + 1).tokenize(',').each { portletId ->
+                                    if (portletId.trim() && matchesCheck(portletId.trim())) {
+                                        addPlid(portletId, plid)
                                     }
-                                    plids << layout.plid
                                 }
                             }
                         }
                     }
-                } catch (Throwable ignored) {
                 }
             }
 
@@ -2126,7 +2313,7 @@ def invoke__6_deprecations_groovy(Map<String, Object> uasContext) {
             def controlPanelPlids = [] as Set
             portletIdToPlids.values().flatten().unique().each { plid ->
                 try {
-                    def layout = com.liferay.portal.kernel.service.LayoutLocalServiceUtil.fetchLayout(plid)
+                    def layout = layoutService.fetchLayout(plid)
                     if (layout == null || layout.getGroup().isControlPanel()) {
                         controlPanelPlids << plid
                     }
@@ -2148,25 +2335,44 @@ def invoke__6_deprecations_groovy(Map<String, Object> uasContext) {
         // 2. Page types, private pages, page templates, site templates, themes
         // ------------------------------------------------------------------
         try {
-            def siteGroupIds = com.liferay.portal.kernel.service.GroupLocalServiceUtil.getGroups(-1, -1).findAll {
-                it.site && !it.isControlPanel() && !it.isUser()
+            def siteQuery = com.liferay.portal.kernel.service.GroupLocalServiceUtil.dynamicQuery()
+            siteQuery.add(restrictions.eq('site', true))
+            def siteGroupIds = com.liferay.portal.kernel.service.GroupLocalServiceUtil.dynamicQuery(siteQuery).findAll {
+                !it.isControlPanel() && !it.isUser()
             }*.groupId as Set
+
+            // Counted in the database, grouped by site / type / private (and system, 7.2+: drafts, master and template pages)
+            def countRows = { boolean withSystem ->
+                def query = layoutService.dynamicQuery()
+                def projectionList = projections.projectionList()
+                        .add(projections.groupProperty('groupId'))
+                        .add(projections.groupProperty('type'))
+                        .add(projections.groupProperty('privateLayout'))
+                if (withSystem) {
+                    projectionList.add(projections.groupProperty('system'))
+                }
+                projectionList.add(projections.rowCount())
+                query.setProjection(projectionList)
+                layoutService.dynamicQuery(query)
+            }
+            def rows
+            boolean hasSystem = true
+            try {
+                rows = countRows(true)
+            } catch (Throwable ignored) {
+                hasSystem = false
+                rows = countRows(false)
+            }
 
             def typeCounts = [:].withDefault { 0 }
             def privateSitePages = 0
-            def layouts = com.liferay.portal.kernel.service.LayoutLocalServiceUtil.getLayouts(-1, -1)
-            layouts.each { layout ->
-                if (layout.groupId in siteGroupIds) {
-                    def system = false
-                    try {
-                        system = layout.isSystem()  // drafts and master / template pages (7.2+)
-                    } catch (Throwable ignored) {
-                    }
-                    if (!system) {
-                        typeCounts[layout.type] = typeCounts[layout.type] + 1
-                        if (layout.privateLayout) {
-                            privateSitePages++
-                        }
+            rows.each { row ->
+                def system = hasSystem ? (row[3] as boolean) : false
+                long count = (hasSystem ? row[4] : row[3]) as long
+                if ((row[0] as long) in siteGroupIds && !system) {
+                    typeCounts[row[1]] = typeCounts[row[1]] + count
+                    if (row[2] as boolean) {
+                        privateSitePages += count
                     }
                 }
             }
@@ -2208,6 +2414,37 @@ def invoke__6_deprecations_groovy(Map<String, Object> uasContext) {
                     archivedThemes.collect { " - ${it.key}: ${it.value}" }.join('\n'))
         } catch (Throwable t) {
             report('dialect_theme_count', null, "n/a - ${t}", '')
+        }
+
+        // Deprecation feature flags that are switched on: each one keeps a deprecated feature available
+        try {
+            def ffReference = bundleContext?.getServiceReference('com.liferay.portal.kernel.feature.flag.FeatureFlagManager')
+            if (ffReference == null) {
+                report('feature_flags_enabled_count', null, 'Deprecation feature flags: n/a (feature flags not available in this release)', '')
+            } else {
+                def ffManager = bundleContext.getService(ffReference)
+                try {
+                    def isDeprecation = { f -> f.featureFlagType.name().equalsIgnoreCase('deprecation') } as java.util.function.Predicate
+                    def lines = []
+                    com.liferay.portal.kernel.service.CompanyLocalServiceUtil.getCompanies().each { company ->
+                        ffManager.getFeatureFlags(company.companyId, isDeprecation).findAll { it.isEnabled() }.sort { it.key }.each { flag ->
+                            def title = ''
+                            try {
+                                title = flag.getTitle(company.locale) ?: ''
+                            } catch (Throwable ignored) {
+                            }
+                            lines << " - ${company.webId} | ${flag.key} | ${title}"
+                        }
+                    }
+                    report('feature_flags_enabled_count', lines.size(),
+                            'Deprecation feature flags switched on (each keeps a deprecated feature available; it is planned for removal)',
+                            lines.join('\n'))
+                } finally {
+                    bundleContext.ungetService(ffReference)
+                }
+            }
+        } catch (Throwable t) {
+            report('feature_flags_enabled_count', null, "n/a - ${t}", '')
         }
 
         // ------------------------------------------------------------------
@@ -2698,8 +2935,12 @@ def invoke__7_additional_info_groovy(Map<String, Object> uasContext) {
                         com.liferay.portal.kernel.util.PropsUtil.get('locales.enabled')
                 "${company.webId}: default ${company.locale}, available ${locales}"
             }
-            def sitesWithOwnLanguages = com.liferay.portal.kernel.service.GroupLocalServiceUtil.getGroups(-1, -1).findAll {
-                it.site && it.getTypeSettingsProperty('inheritLocales') == 'false'
+            // only sites whose settings mention inheritLocales (instead of loading every group, incl. one per user)
+            def localesQuery = com.liferay.portal.kernel.service.GroupLocalServiceUtil.dynamicQuery()
+            localesQuery.add(com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil.eq('site', true))
+            localesQuery.add(com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil.like('typeSettings', '%inheritLocales%'))
+            def sitesWithOwnLanguages = com.liferay.portal.kernel.service.GroupLocalServiceUtil.dynamicQuery(localesQuery).findAll {
+                it.getTypeSettingsProperty('inheritLocales') == 'false'
             }
             def allLocales = com.liferay.portal.kernel.util.PropsUtil.get('locales.enabled')?.tokenize(',') ?: []
             println UASUtils.toCSVLine('data_locales_enabled_count', allLocales.size(),
@@ -2727,14 +2968,15 @@ def uasContext = [
         targetScriptFileName: 'dxp_2023_q4-all.groovy'
 ]
 
-invoke__1_infra_groovy(uasContext)
-invoke__2_data_groovy(uasContext)
-invoke__3_database_info_groovy(uasContext)
-invoke__4_custom_code_groovy(uasContext)
-invoke__5_new_items_groovy(uasContext)
-invoke__6_deprecations_groovy(uasContext)
-invoke__7_additional_info_groovy(uasContext)
-  
+def uasSectionTimings = [:]
+
+uasTimed(uasSectionTimings, '1_infra') { invoke__1_infra_groovy(uasContext) }
+uasTimed(uasSectionTimings, '2_data') { invoke__2_data_groovy(uasContext) }
+uasTimed(uasSectionTimings, '3_database_info') { invoke__3_database_info_groovy(uasContext) }
+uasTimed(uasSectionTimings, '4_custom_code') { invoke__4_custom_code_groovy(uasContext) }
+uasTimed(uasSectionTimings, '5_new_items') { invoke__5_new_items_groovy(uasContext) }
+uasTimed(uasSectionTimings, '6_deprecations') { invoke__6_deprecations_groovy(uasContext) }
+uasTimed(uasSectionTimings, '7_additional_info') { invoke__7_additional_info_groovy(uasContext) }
 // BEGIN common/_combined-footer.groovy
 
 import groovy.time.TimeCategory 
@@ -2753,6 +2995,7 @@ println """\
     ${UASUtils.toCSVLine('uas_start_date', uasMetadata['startDateFormatted'])}  
     ${UASUtils.toCSVLine('uas_end_date', uasMetadata['endDateFormatted'])}  
     ${UASUtils.toCSVLine('uas_duration', uasMetadata['duration'])}  
+    ${UASUtils.toCSVLine('uas_section_durations', uasSectionTimings.values().sum(0), uasSectionTimings.collect { "${it.key}: ${it.value} ms" }.join(', '))}
     """.stripIndent()
 
 // END common/_combined-footer.groovy
