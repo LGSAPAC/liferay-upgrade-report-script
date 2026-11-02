@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Upgrade Assessment Report</title>
-<meta name="description" content="Generate the upgrade assessment report for your Liferay installation in three steps. Runs in your browser; nothing is uploaded.">
+<title>Liferay Upgrade Program</title>
+<meta name="description" content="From upgrade assessment to go-live: identify your Liferay version, run the read-only assessment script on UAT and send the report to Liferay.">
 <style>
   :root {
     --bg: #f6f7f9;
@@ -22,6 +22,7 @@
     --warn-soft: #fff4de;
     --err: #b3261e;
     --err-soft: #fde8e6;
+    --p1: #0b5fff; --p2: #7a4cd9; --p3: #c2410c; --p4: #0f766e; --p5: #1d7a3a;
     --radius: 10px;
     --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -32,6 +33,7 @@
       --bg: #12151a; --surface: #1a1e25; --surface-2: #222833; --text: #e6e9ee; --muted: #a2abb8;
       --border: #333b47; --accent: #6d9bff; --accent-text: #0b1220; --accent-soft: #1f2a44;
       --ok: #6fcf8f; --ok-soft: #173023; --warn: #f0b85c; --warn-soft: #33270f; --err: #ff8a80; --err-soft: #3a1b19;
+      --p1: #6d9bff; --p2: #b39af0; --p3: #fb923c; --p4: #2dd4bf; --p5: #6fcf8f;
       --shadow: none;
     }
   }
@@ -39,174 +41,308 @@
     --bg: #12151a; --surface: #1a1e25; --surface-2: #222833; --text: #e6e9ee; --muted: #a2abb8;
     --border: #333b47; --accent: #6d9bff; --accent-text: #0b1220; --accent-soft: #1f2a44;
     --ok: #6fcf8f; --ok-soft: #173023; --warn: #f0b85c; --warn-soft: #33270f; --err: #ff8a80; --err-soft: #3a1b19;
+    --p1: #6d9bff; --p2: #b39af0; --p3: #fb923c; --p4: #2dd4bf; --p5: #6fcf8f;
     --shadow: none;
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 var(--sans); }
-  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
-  header h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 6px; }
+  main { max-width: 900px; margin: 0 auto; padding: 32px 16px 64px; }
+  header h1 { font-size: 1.8rem; line-height: 1.25; margin: 0 0 6px; }
   header p { margin: 0; color: var(--muted); }
-  .notice { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 8px; }
-  .pill { font-size: .85rem; padding: 4px 10px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); border: 1px solid transparent; }
-  .pill.neutral { background: var(--surface-2); color: var(--muted); }
-  section.step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 22px 20px; margin-top: 18px; }
-  .step-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
-  .step-num { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .95rem; }
-  .step h2 { font-size: 1.2rem; margin: 0; }
-  .step .who { margin-left: auto; font-size: .8rem; color: var(--muted); }
-  .lead { color: var(--muted); margin: 2px 0 14px 42px; }
-  .body { margin-left: 42px; }
+
+  /* phase overview */
+  .phases { list-style: none; padding: 0; margin: 22px 0 6px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .phases a { display: block; height: 100%; text-decoration: none; color: var(--text); background: var(--surface); border: 1px solid var(--border);
+              border-top: 4px solid var(--pc); border-radius: 8px; padding: 10px 12px; box-shadow: var(--shadow); }
+  .phases a:hover { border-color: var(--pc); }
+  .phases .pn { font-size: .75rem; font-weight: 700; color: var(--pc); text-transform: uppercase; letter-spacing: .04em; }
+  .phases .pt { display: block; font-weight: 700; margin: 2px 0; line-height: 1.3; }
+  .phases .ps { font-size: .82rem; color: var(--muted); }
+
+  .notice { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+  .pill { font-size: .85rem; padding: 4px 10px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
+
+  /* phase sections */
+  .phase { margin-top: 34px; }
+  .phase-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; border-bottom: 2px solid var(--pc); padding-bottom: 6px; }
+  .phase-head .tag { font-size: .78rem; font-weight: 700; color: var(--pc); text-transform: uppercase; letter-spacing: .05em; }
+  .phase-head h2 { margin: 0; font-size: 1.35rem; }
+  .phase-head .range { color: var(--muted); font-size: .9rem; margin-left: auto; }
+
+  section.step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; margin-top: 14px; }
+  .step-head { display: flex; align-items: baseline; gap: 12px; }
+  .step-num { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--pc); font-weight: 700; font-size: .95rem; border: 2px solid var(--pc); }
+  .step h3 { font-size: 1.1rem; margin: 0; }
+  .who { margin-left: auto; font-size: .78rem; font-weight: 600; color: var(--muted); background: var(--surface-2); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+  .lead { color: var(--muted); margin: 4px 0 0 42px; }
+  .body { margin: 12px 0 0 42px; }
+  .body p { margin: 8px 0; }
+
   label { display: block; font-weight: 600; margin: 14px 0 6px; }
   .hint { font-weight: 400; color: var(--muted); font-size: .9rem; }
   select, input[type=text], input[type=email], textarea {
-    width: 100%; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 9px 11px;
+    width: 100%; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px;
   }
-  textarea { font: 13px/1.45 var(--mono); min-height: 140px; resize: vertical; }
+  textarea { font: 13px/1.45 var(--mono); resize: vertical; }
   select:focus, input:focus, textarea:focus, button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 1px; border-color: var(--accent); }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
-  button, .button {
-    font: inherit; font-weight: 600; border-radius: 8px; padding: 9px 16px; border: 1px solid var(--border);
-    background: var(--surface); color: var(--text); cursor: pointer; text-decoration: none; display: inline-block;
-  }
+  button, .button { font: inherit; font-weight: 600; border-radius: 8px; padding: 9px 16px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; text-decoration: none; display: inline-block; }
   button.primary, .button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
   button:disabled { opacity: .5; cursor: not-allowed; }
-  .chosen { margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: var(--surface-2); }
-  .chosen code, code { font-family: var(--mono); font-size: .9em; }
-  .chosen strong { display: block; }
-  ol.instructions { margin: 10px 0 0; padding-left: 22px; }
-  ol.instructions li { margin: 6px 0; }
-  .toggle { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; }
+  code { font-family: var(--mono); font-size: .9em; overflow-wrap: anywhere; }
+  ol.list, ul.list { margin: 8px 0 0; padding-left: 22px; }
+  ol.list li, ul.list li { margin: 5px 0; }
+
+  .tabs { display: flex; gap: 6px; margin-top: 4px; border-bottom: 1px solid var(--border); }
+  .tabs button { border: none; border-bottom: 3px solid transparent; border-radius: 0; background: none; padding: 8px 10px; color: var(--muted); }
+  .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  .tabpanel { padding-top: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; margin-top: 8px; }
+  th, td { text-align: left; padding: 7px 8px; border-top: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; border-top: none; }
+  td code { word-break: break-all; }
+  .table-wrap { overflow-x: auto; }
+
+  .chosen { margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: var(--ok-soft); color: var(--ok); }
+  .chosen strong { display: block; color: var(--text); }
+  .toggle { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; }
   .toggle input { margin-top: 4px; width: 18px; height: 18px; flex: none; }
   .toggle label { margin: 0; }
+  .callout { margin-top: 12px; padding: 12px 14px; border-radius: 8px; font-size: .95rem; }
+  .callout.warn { background: var(--warn-soft); color: var(--warn); }
+  .callout.info { background: var(--accent-soft); color: var(--text); }
+  .callout a { color: inherit; font-weight: 600; }
   .status { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: .95rem; display: none; }
   .status.show { display: block; }
   .status.ok { background: var(--ok-soft); color: var(--ok); }
   .status.warn { background: var(--warn-soft); color: var(--warn); }
   .status.err { background: var(--err-soft); color: var(--err); }
-  .checks { list-style: none; padding: 0; margin: 14px 0 0; }
-  .checks li { display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--border); }
-  .checks li:first-child { border-top: none; }
-  .checks .icon { flex: none; width: 22px; text-align: center; font-weight: 700; }
-  .checks .ok { color: var(--ok); } .checks .warn { color: var(--warn); } .checks .err { color: var(--err); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .fact { font-size: .85rem; background: var(--surface-2); border-radius: 6px; padding: 4px 10px; }
   details { margin-top: 12px; }
   summary { cursor: pointer; color: var(--accent); font-weight: 600; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .drop { border: 2px dashed var(--border); border-radius: 8px; padding: 10px; text-align: center; color: var(--muted); font-size: .9rem; margin-top: 8px; }
-  .drop.over { border-color: var(--accent); color: var(--accent); }
-  footer { margin-top: 28px; color: var(--muted); font-size: .9rem; text-align: center; }
+  footer { margin-top: 34px; color: var(--muted); font-size: .9rem; text-align: center; }
   a { color: var(--accent); }
-  @media (max-width: 640px) {
+
+  .ph1 { --pc: var(--p1); } .ph2 { --pc: var(--p2); } .ph3 { --pc: var(--p3); } .ph4 { --pc: var(--p4); } .ph5 { --pc: var(--p5); }
+
+  @media (max-width: 760px) {
+    .phases { grid-template-columns: 1fr 1fr; }
     .lead, .body { margin-left: 0; }
     .grid2 { grid-template-columns: 1fr; }
-    .step .who { display: none; }
+    .phase-head .range { margin-left: 0; width: 100%; }
   }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>Upgrade Assessment Report</h1>
-    <p>Create the upgrade assessment report for your Liferay installation in three steps. This page runs in your browser: nothing you paste here is uploaded.</p>
+    <h1>Liferay Upgrade Program</h1>
+    <p>From the upgrade assessment to go-live. Start with the assessment: identify your version, run the read-only script on your UAT environment and send the report to Liferay.</p>
+
+    <ol class="phases" aria-label="Phases">
+      <li class="ph1"><a href="#phase-assessment"><span class="pn">Phase 1 · Steps 0–4</span><span class="pt">Assessment</span><span class="ps">Report, health check, qualification</span></a></li>
+      <li class="ph2"><a href="#phase-preparation"><span class="pn">Phase 2 · Step 5</span><span class="pt">Preparation</span><span class="ps">Deliverables to the Upgrade Team</span></a></li>
+      <li class="ph3"><a href="#phase-upgrade"><span class="pn">Phase 3 · Step 6</span><span class="pt">Core solution upgrade</span><span class="ps">8–16 weeks, performed by Liferay</span></a></li>
+      <li class="ph4"><a href="#phase-validation"><span class="pn">Phase 4 · Step 7</span><span class="pt">Validation</span><span class="ps">30 days of UAT testing and fixes</span></a></li>
+      <li class="ph5"><a href="#phase-golive"><span class="pn">Phase 5 · Step 8</span><span class="pt">Go-Live</span><span class="ps">Support by Liferay Support</span></a></li>
+    </ol>
+  </header>
+
+  <!-- ======================= PHASE 1: ASSESSMENT ======================= -->
+  <div class="phase ph1" id="phase-assessment">
+    <div class="phase-head"><span class="tag">Phase 1</span><h2>Assessment</h2><span class="range">Steps 0–4</span></div>
     <div class="notice" role="note">
       <span class="pill">Read-only scripts</span>
       <span class="pill">Run on UAT / test only, never on production</span>
       <span class="pill">At your own risk</span>
-      <span class="pill neutral">Works for Community Edition, EE and DXP, incl. Quarterly Releases</span>
     </div>
-  </header>
 
-  <!-- STEP 0 -->
-  <section class="step" aria-labelledby="s0">
-    <div class="step-head"><span class="step-num">0</span><h2 id="s0">Identify your version</h2><span class="who">You</span></div>
-    <p class="lead">Choose your Liferay edition and version. Not sure? Use the version check below.</p>
-    <div class="body">
-      <label for="version">Edition and version</label>
-      <select id="version"><option value="">Select your version…</option></select>
+    <!-- STEP 0 -->
+    <section class="step" id="step0" aria-labelledby="s0">
+      <div class="step-head"><span class="step-num">0</span><h3 id="s0">Identify your version</h3><span class="who">You</span></div>
+      <p class="lead">Find your Liferay edition and version, then select it below.</p>
+      <div class="body">
+        <div class="tabs" role="tablist" aria-label="How to find your version">
+          <button type="button" role="tab" id="tab-manual" aria-controls="panel-manual" aria-selected="true">Find it manually</button>
+          <button type="button" role="tab" id="tab-script" aria-controls="panel-script" aria-selected="false" tabindex="-1">Use the version check script</button>
+        </div>
 
-      <details id="notsure">
-        <summary>Not sure which version you have?</summary>
-        <ol class="instructions">
-          <li>Copy the version check script: <button type="button" id="copyIdentify">Copy version check</button></li>
-          <li>Run it in the Script console (see step 1 for where to find it), with language <strong>Groovy</strong>.</li>
-          <li>Paste its result (or the version shown at the top of <em>Server Administration</em>) here:</li>
+        <div class="tabpanel" role="tabpanel" id="panel-manual" aria-labelledby="tab-manual">
+          <ol class="list">
+            <li>Sign in to Liferay as an administrator.</li>
+            <li>Open <strong>Server Administration</strong>:
+              <div class="table-wrap"><table>
+                <thead><tr><th>Your version</th><th>Where to find Server Administration</th></tr></thead>
+                <tbody>
+                  <tr><td>6.1</td><td>Go to &gt; Control Panel &gt; Server &gt; Server Administration</td></tr>
+                  <tr><td>6.2</td><td>Admin &gt; Control Panel &gt; Configuration &gt; Server Administration</td></tr>
+                  <tr><td>7.0 – 7.3</td><td>Product Menu (top left) &gt; Control Panel &gt; Configuration &gt; Server Administration</td></tr>
+                  <tr><td>7.4 and Quarterly Releases</td><td>Global Menu (grid icon, top right) &gt; Control Panel &gt; System &gt; Server Administration</td></tr>
+                </tbody>
+              </table></div>
+              <p class="hint">Or open it directly: <code>https://&lt;your-server&gt;/group/control_panel/manage/-/server/resources</code> (6.x), or <code>https://&lt;your-server&gt;/group/guest/~/control_panel/manage?p_p_id=com_liferay_server_admin_web_portlet_ServerAdminPortlet</code> (7.0 and later).</p>
+            </li>
+            <li>The version is shown at the top of the page. Examples:
+              <div class="table-wrap"><table>
+                <thead><tr><th>Shown on the page</th><th>Select</th></tr></thead>
+                <tbody>
+                  <tr><td><code>Liferay Portal Community Edition 6.2 CE GA6</code></td><td>Liferay Portal CE 6.2</td></tr>
+                  <tr><td><code>Liferay Community Edition Portal 7.4.3.132 CE GA132</code></td><td>Liferay Portal CE 7.4</td></tr>
+                  <tr><td><code>Liferay Portal Enterprise Edition 6.1.30 EE</code></td><td>Liferay Portal EE 6.1</td></tr>
+                  <tr><td><code>Liferay Digital Experience Platform 7.4.13 Update 92</code></td><td>Liferay DXP 7.4</td></tr>
+                  <tr><td><code>Liferay Digital Experience Platform 2025.Q1.29 LTS</code></td><td>Liferay DXP 2025.Q1 LTS</td></tr>
+                </tbody>
+              </table></div>
+              <p class="hint">The same text is printed in the server log when Liferay starts (look for <code>Starting Liferay</code>).</p>
+            </li>
+          </ol>
+        </div>
+
+        <div class="tabpanel" role="tabpanel" id="panel-script" aria-labelledby="tab-script" hidden>
+          <ol class="list">
+            <li>Copy the read-only version check script: <button type="button" id="copyIdentify">Copy version check</button></li>
+            <li>Run it in the Script console (step 1 explains how), with language <strong>Groovy</strong>.</li>
+            <li>It prints the script to use, for example <code>Script: ce_7_4/ce_7_4-all.groovy</code>. Select that version below, or type the <code>Script:</code> line here and it is selected for you:</li>
+          </ol>
+          <input type="text" id="identifyText" placeholder="e.g. Script: ce_7_4/ce_7_4-all.groovy" aria-label="Script line from the version check">
+          <div class="status" id="identifyStatus" role="status" aria-live="polite"></div>
+        </div>
+
+        <label for="version">Your edition and version</label>
+        <select id="version"><option value="">Select your version…</option></select>
+        <div class="chosen" id="chosen" hidden>
+          <strong id="chosenName"></strong>
+          Script: <code id="chosenFile"></code>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 1 -->
+    <section class="step" id="step1" aria-labelledby="s1">
+      <div class="step-head"><span class="step-num">1</span><h3 id="s1">Run the script on UAT</h3><span class="who">You</span></div>
+      <p class="lead">Copy the script for your version and run it in the Script console of your <strong>UAT / test</strong> environment.</p>
+      <div class="body">
+        <div class="callout warn" id="noVersion" role="alert">
+          <strong>Select your version in <a href="#step0">step 0</a> first.</strong> Each Liferay version needs its own script; a script for another version can report wrong results or fail.
+        </div>
+        <div class="toggle">
+          <input type="checkbox" id="privacy">
+          <div>
+            <label for="privacy">Hide names and addresses (privacy option)</label>
+            <span class="hint">Replaces site names, URLs, instance names, host names, e-mail addresses, the database location and installation paths with placeholders such as <code>site-1</code>. All counts stay the same.</span>
+          </div>
+        </div>
+        <div class="row">
+          <button type="button" class="primary" id="copyScript" disabled>Copy script</button>
+          <button type="button" id="downloadScript" disabled>Download script</button>
+          <a class="button" id="viewScript" href="#" target="_blank" rel="noopener" hidden>View on GitHub</a>
+        </div>
+        <div class="status" id="scriptStatus" role="status" aria-live="polite"></div>
+        <ol class="list">
+          <li>Sign in to your <strong>UAT</strong> environment as an administrator.</li>
+          <li>Open <span id="consolePath">Server Administration (see step 0)</span> and select the <strong>Script</strong> tab.</li>
+          <li>Set <strong>Language</strong> to <strong>Groovy</strong>, delete the sample code and paste the script.</li>
+          <li>Click <strong>Execute</strong> and wait until the page reloads. On large installations this can take a few minutes; don't click again.</li>
+          <li>The result appears in the <strong>Output</strong> box. It starts with <code>"Key", "Value", "Description"</code> and ends with lines starting with <code>"uas_</code>.</li>
         </ol>
-        <textarea id="identifyText" rows="4" placeholder="e.g. Liferay Community Edition Portal 7.4.3.132 CE GA132 …" aria-label="Version check result"></textarea>
-        <div class="status" id="identifyStatus" role="status" aria-live="polite"></div>
-      </details>
-
-      <div class="chosen" id="chosen" hidden>
-        <strong id="chosenName"></strong>
-        <span class="hint">Script: <code id="chosenFile"></code></span>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- STEP 1 -->
-  <section class="step" aria-labelledby="s1">
-    <div class="step-head"><span class="step-num">1</span><h2 id="s1">Run the script on UAT</h2><span class="who">You</span></div>
-    <p class="lead">Copy the script for your version and run it in the Script console of your <strong>UAT / test</strong> environment.</p>
-    <div class="body">
-      <div class="toggle">
-        <input type="checkbox" id="privacy">
-        <div>
-          <label for="privacy">Hide names and addresses (privacy option)</label>
-          <span class="hint">Replaces site names, URLs, instance names, host names, e-mail addresses, the database location and installation paths with placeholders such as <code>site-1</code>. All counts stay the same.</span>
+    <!-- STEP 2 -->
+    <section class="step" id="step2" aria-labelledby="s2">
+      <div class="step-head"><span class="step-num">2</span><h3 id="s2">Save the output as a .txt file and e-mail it to Liferay</h3><span class="who">You</span></div>
+      <p class="lead">Save the result on your own computer, then send it to Liferay Support by e-mail.</p>
+      <div class="body">
+        <p><strong>Save the output:</strong></p>
+        <ol class="list">
+          <li>Click inside the <strong>Output</strong> box, select everything (<kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Cmd</kbd>+<kbd>A</kbd>) and copy it (<kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Cmd</kbd>+<kbd>C</kbd>).</li>
+          <li><strong>Windows:</strong> open <strong>Notepad</strong>, paste, then <strong>File &gt; Save As</strong> and choose <em>Text Documents (*.txt)</em>.<br>
+              <strong>Mac:</strong> open <strong>TextEdit</strong>, choose <strong>Format &gt; Make Plain Text</strong>, paste, then <strong>File &gt; Save</strong>.</li>
+          <li>Name the file <code>&lt;company&gt;_&lt;liferay-version&gt;_upgrade-report_&lt;yyyy-mm-dd&gt;.txt</code>, for example <code>acme_dxp-7.3_upgrade-report_2026-11-02.txt</code>.</li>
+          <li>Check that the last lines start with <code>"uas_</code> (for example <code>"uas_end_date"</code>). If some lines contain <code>UAS ERROR</code>, send the file anyway: it tells Liferay what could not be read.</li>
+        </ol>
+        <p><strong>Send it:</strong></p>
+        <ol class="list">
+          <li>E-mail the <code>.txt</code> file as an attachment to <a href="mailto:support@liferay.com">support@liferay.com</a>.</li>
+          <li>Put your <strong>Liferay customer success contact</strong> in <strong>CC</strong>, if you know who it is.</li>
+          <li>Use a subject such as <em>Upgrade assessment report – &lt;company&gt;</em>.</li>
+        </ol>
+        <div class="row">
+          <a class="button primary" id="mailLink" href="mailto:support@liferay.com?subject=Upgrade%20assessment%20report">Start the e-mail</a>
+          <span class="hint">Opens your e-mail program with the address and subject filled in. Attach the saved file yourself.</span>
         </div>
+        <details>
+          <summary>Add your company and customer success contact to the e-mail</summary>
+          <div class="grid2">
+            <div><label for="company">Company name</label><input type="text" id="company" autocomplete="organization" placeholder="e.g. Acme"></div>
+            <div><label for="cc">Customer success contact (CC)</label><input type="email" id="cc" placeholder="name@liferay.com"></div>
+          </div>
+        </details>
+        <div class="callout info">The report contains technical details (versions, counts, plugin and site names) but no content from your sites, and the scripts do not read passwords. To hide names and addresses, use the privacy option in step 1.</div>
       </div>
-      <div class="row">
-        <button type="button" class="primary" id="copyScript" disabled>Copy script</button>
-        <button type="button" id="downloadScript" disabled>Download script</button>
-        <a class="button" id="viewScript" href="#" target="_blank" rel="noopener" hidden>View on GitHub</a>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="step" id="step3" aria-labelledby="s3">
+      <div class="step-head"><span class="step-num">3</span><h3 id="s3">Health check</h3><span class="who">Liferay</span></div>
+      <p class="lead">Liferay reviews your report and carries out a health check of your installation: version, infrastructure, data volumes, customizations and features that are deprecated in newer releases.</p>
+    </section>
+
+    <!-- STEP 4 -->
+    <section class="step" id="step4" aria-labelledby="s4">
+      <div class="step-head"><span class="step-num">4</span><h3 id="s4">Qualification and agreement</h3><span class="who">Liferay → You</span></div>
+      <p class="lead">Liferay validates whether you qualify for the Liferay upgrade program. If you qualify, Liferay shares the contractual terms with you for sign-off.</p>
+    </section>
+  </div>
+
+  <!-- ======================= PHASE 2: PREPARATION ======================= -->
+  <div class="phase ph2" id="phase-preparation">
+    <div class="phase-head"><span class="tag">Phase 2</span><h2>Preparation</h2><span class="range">Step 5</span></div>
+    <section class="step" id="step5" aria-labelledby="s5">
+      <div class="step-head"><span class="step-num">5</span><h3 id="s5">Prepare the deliverables for the Liferay Upgrade Team</h3><span class="who">You</span></div>
+      <p class="lead">Prepare the deliverables for the upgrade and hand them off to the Liferay Upgrade Team. Liferay confirms the exact list with you; it typically includes:</p>
+      <div class="body">
+        <ul class="list">
+          <li>A recent copy of the database and the document library (file store).</li>
+          <li>The source code of your customizations (modules, themes, plugins).</li>
+          <li>Your configuration (for example portal properties and system settings).</li>
+          <li>Access to the environments and the contacts the Upgrade Team needs.</li>
+        </ul>
       </div>
-      <div class="status" id="scriptStatus" role="status" aria-live="polite"></div>
+    </section>
+  </div>
 
-      <ol class="instructions" id="runSteps">
-        <li>Sign in to your <strong>UAT</strong> environment as an administrator.</li>
-        <li>Open <span id="consolePath">Control Panel &gt; Server Administration</span> and select the <strong>Script</strong> tab.</li>
-        <li>Set <strong>Language</strong> to <strong>Groovy</strong>, delete the sample code and paste the script.</li>
-        <li>Click <strong>Execute</strong> and wait until the page reloads (on large installations this can take a few minutes; don't click again).</li>
-        <li>Select everything in the <strong>Output</strong> box (Ctrl+A / Cmd+A) and copy it (Ctrl+C / Cmd+C).</li>
-      </ol>
-    </div>
-  </section>
+  <!-- ======================= PHASE 3: CORE SOLUTION UPGRADE ======================= -->
+  <div class="phase ph3" id="phase-upgrade">
+    <div class="phase-head"><span class="tag">Phase 3</span><h2>Core solution upgrade</h2><span class="range">Step 6</span></div>
+    <section class="step" id="step6" aria-labelledby="s6">
+      <div class="step-head"><span class="step-num">6</span><h3 id="s6">Upgrade execution</h3><span class="who">Liferay</span></div>
+      <p class="lead">After the kick-off, Liferay performs the upgrade of your solution.</p>
+      <div class="body"><div class="facts"><span class="fact">Duration: 8–16 weeks</span><span class="fact">Performed by Liferay</span></div></div>
+    </section>
+  </div>
 
-  <!-- STEP 2 -->
-  <section class="step" aria-labelledby="s2">
-    <div class="step-head"><span class="step-num">2</span><h2 id="s2">Check, save and send the report</h2><span class="who">You</span></div>
-    <p class="lead">Paste the output here. The page checks it is complete and saves it as a text file for you to send.</p>
-    <div class="body">
-      <label for="output">Script output</label>
-      <textarea id="output" rows="8" placeholder='"Key", "Value", "Description" …'></textarea>
-      <div class="drop" id="drop">…or drop a saved <code>.txt</code> file here</div>
+  <!-- ======================= PHASE 4: VALIDATION ======================= -->
+  <div class="phase ph4" id="phase-validation">
+    <div class="phase-head"><span class="tag">Phase 4</span><h2>Validation</h2><span class="range">Step 7</span></div>
+    <section class="step" id="step7" aria-labelledby="s7">
+      <div class="step-head"><span class="step-num">7</span><h3 id="s7">UAT testing and fixes</h3><span class="who">You + Liferay</span></div>
+      <p class="lead">You test the upgraded solution in UAT; issues found are fixed.</p>
+      <div class="body"><div class="facts"><span class="fact">Duration: 30 days</span><span class="fact">UAT testing and fixes</span></div></div>
+    </section>
+  </div>
 
-      <ul class="checks" id="checks" aria-live="polite"></ul>
-
-      <div class="grid2">
-        <div>
-          <label for="company">Company name <span class="hint">(used in the file name)</span></label>
-          <input type="text" id="company" autocomplete="organization" placeholder="e.g. Acme">
-        </div>
-        <div>
-          <label for="contact">Your Liferay contact's e-mail <span class="hint">(optional)</span></label>
-          <input type="email" id="contact" placeholder="customer success contact">
-        </div>
-      </div>
-      <div class="row">
-        <button type="button" class="primary" id="saveReport" disabled>Save report (.txt)</button>
-        <button type="button" id="emailReport" disabled>Prepare e-mail</button>
-        <a class="button" href="https://help.liferay.com" target="_blank" rel="noopener">Open a Help Center ticket</a>
-      </div>
-      <div class="status" id="saveStatus" role="status" aria-live="polite"></div>
-      <p class="hint" style="margin-top:12px">Liferay subscribers (EE / DXP): attach the saved file to a ticket in the Liferay Help Center. Community Edition users: e-mail the file to your designated Liferay customer success contact. E-mail programs cannot attach files automatically, so attach the saved file to the e-mail yourself.</p>
-    </div>
-  </section>
-
-  <!-- STEP 3 -->
-  <section class="step" aria-labelledby="s3">
-    <div class="step-head"><span class="step-num">3</span><h2 id="s3">Liferay health check</h2><span class="who">Liferay</span></div>
-    <p class="lead">Liferay reviews your report, carries out a health check of your installation and validates whether you qualify for the Liferay upgrade program. Your customer success contact will follow up with the results and next steps.</p>
-  </section>
+  <!-- ======================= PHASE 5: GO-LIVE ======================= -->
+  <div class="phase ph5" id="phase-golive">
+    <div class="phase-head"><span class="tag">Phase 5</span><h2>Go-Live</h2><span class="range">Step 8</span></div>
+    <section class="step" id="step8" aria-labelledby="s8">
+      <div class="step-head"><span class="step-num">8</span><h3 id="s8">Go-Live</h3><span class="who">You + Liferay</span></div>
+      <p class="lead">The upgraded solution goes live. From then on, support comes from the Liferay Support team.</p>
+    </section>
+  </div>
 
   <footer>
     Scripts and documentation: <a href="https://github.com/LGSAPAC/liferay-upgrade-report-script" rel="noopener">github.com/LGSAPAC/liferay-upgrade-report-script</a>
@@ -251,8 +387,9 @@
   };
   ['7.1', '7.2', '7.3'].forEach(function (v) { consolePaths[v] = consolePaths['7.0']; });
 
+  var $ = function (id) { return document.getElementById(id); };
   var byId = {};
-  var select = document.getElementById('version');
+  var select = $('version');
   groups.forEach(function (g) {
     var og = document.createElement('optgroup');
     og.label = g.label;
@@ -266,10 +403,29 @@
     select.appendChild(og);
   });
 
-  var $ = function (id) { return document.getElementById(id); };
   function status(el, kind, html) { el.className = 'status show ' + kind; el.innerHTML = html; }
   function clearStatus(el) { el.className = 'status'; el.innerHTML = ''; }
   function fileOf(id) { return id + '/' + id + '-all.groovy'; }
+
+  // ---- step 0 tabs -------------------------------------------------------------------------------------
+  var tabs = [$('tab-manual'), $('tab-script')];
+  function selectTab(tab) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      $(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { selectTab(t); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        selectTab(next); next.focus();
+      }
+    });
+  });
 
   // ---- step 0: choose / detect -----------------------------------------------------------------------
   var current = null;
@@ -277,19 +433,24 @@
     current = byId[id] || null;
     select.value = current ? current.id : '';
     $('chosen').hidden = !current;
+    $('noVersion').hidden = !!current;
     ['copyScript', 'downloadScript'].forEach(function (b) { $(b).disabled = !current; });
     $('viewScript').hidden = !current;
     clearStatus($('scriptStatus'));
-    if (!current) return;
+    if (!current) {
+      $('consolePath').innerHTML = 'Server Administration (see step 0)';
+      return;
+    }
     $('chosenName').textContent = current.name;
     $('chosenFile').textContent = fileOf(current.id);
     $('viewScript').href = REPO + fileOf(current.id);
     $('consolePath').innerHTML = '<strong>' + consolePaths[current.family] + '</strong>';
+    updateMail();
   }
   select.addEventListener('change', function () { choose(select.value); });
 
   function detect(text) {
-    var m = /Script:\s*([a-z0-9_]+)\//.exec(text);
+    var m = /Script:\s*([a-z0-9_]+)\//.exec(text) || /\b((?:ce|ee|dxp)_[0-9a-z_]+?)(?:\/|-all|\s|$)/.exec(text);
     if (m && byId[m[1]]) return m[1];
     var q = /(\d{4})\.Q([1-4])/.exec(text);
     var ce = /Community Edition|\bCE\b/.test(text);
@@ -307,13 +468,13 @@
     var id = detect(text);
     if (id && byId[id]) {
       choose(id);
-      status($('identifyStatus'), 'ok', 'Detected <strong>' + byId[id].name + '</strong>. The script is selected above.');
+      status($('identifyStatus'), 'ok', 'Selected <strong>' + byId[id].name + '</strong>.');
     } else {
-      status($('identifyStatus'), 'warn', 'The version could not be recognised. Please choose it from the list.');
+      status($('identifyStatus'), 'warn', 'Not recognised. Please choose your version from the list below.');
     }
   });
 
-  // ---- fetching and copying scripts -------------------------------------------------------------------
+  // ---- step 1: fetching and copying scripts --------------------------------------------------------------
   var cache = {};
   function getText(path) {
     if (cache[path]) return Promise.resolve(cache[path]);
@@ -330,7 +491,7 @@
     return getText(fileOf(current.id)).then(function (text) {
       if ($('privacy').checked) {
         var flagged = text.replace(/^def UAS_MASK_PRIVATE_DATA = false\s*$/m, 'def UAS_MASK_PRIVATE_DATA = true');
-        if (flagged === text) throw new Error('This script has no privacy option.');
+        if (flagged === text) throw new Error('this script has no privacy option');
         return flagged;
       }
       return text;
@@ -378,101 +539,23 @@
     }).catch(function (e) { status($('identifyStatus'), 'err', 'Could not copy the version check (' + e.message + ').'); });
   });
 
-  // ---- step 2: check, save, send ------------------------------------------------------------------------
-  var report = null;
-  function value(text, key) {
-    var m = new RegExp('^"' + key + '", "((?:[^"]|"")*)"', 'm').exec(text);
-    return m ? m[1].replace(/""/g, '"') : null;
+  // ---- step 2: e-mail link (nothing is sent by this page) ----------------------------------------------
+  function updateMail() {
+    var company = $('company').value.trim();
+    var cc = $('cc').value.trim();
+    var subject = 'Upgrade assessment report' + (company ? ' - ' + company : '');
+    var body = 'Hello,\n\nPlease find attached the upgrade assessment report for our Liferay installation' +
+      (current ? ' (' + current.name + ')' : '') + '.\n\nThank you.';
+    var href = 'mailto:support@liferay.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    if (cc) href += '&cc=' + encodeURIComponent(cc);
+    $('mailLink').href = href;
   }
-  function analyse(text) {
-    var checks = [];
-    var keys = text.match(/^"[a-z][a-z0-9_]+", /gm) || [];
-    var add = function (kind, msg) { checks.push([kind, msg]); };
-    if (/Unable to execute script/.test(text)) {
-      add('err', 'The script did not run: the output contains "Unable to execute script". Check that the whole script was pasted and the language is Groovy, then send the error to Liferay.');
-    }
-    if (!/^"Key", "Value", "Description"/m.test(text)) add('warn', 'The start of the output is missing. Copy the whole Output box.');
-    if (!/^\s*"uas_end_date"/m.test(text)) add('err', 'The end of the output is missing (no "uas_end_date" line). Copy the whole Output box.');
-    if (keys.length) add(keys.length > 20 ? 'ok' : 'warn', keys.length + ' report lines found.');
-    var release = value(text, 'infra_liferay_version');
-    var releaseInfo = (new RegExp('^"infra_liferay_version", "[^"]*", "((?:[^"]|"")*)"', 'm').exec(text) || [])[1];
-    if (release) add('ok', 'Liferay version: ' + (releaseInfo || release));
-    var errors = (text.match(/UAS ERROR/g) || []).length;
-    if (errors) add('warn', errors + ' part(s) could not be read ("UAS ERROR"). You can still send the report; it tells Liferay what failed.');
-    var na = (text.match(/", "", "n\/a - /g) || []).length;
-    if (na) add('ok', na + ' item(s) not available in your version (reported as n/a). This is normal.');
-    if (value(text, 'ce_target_match') === 'false' || value(text, 'infra_liferay_script_target_match') === 'false') {
-      add('warn', 'This script does not match your version. Choose the script for your version in step 0 and run it again.');
-    }
-    var masked = value(text, 'uas_private_data_masked') === 'true';
-    if (keys.length) add('ok', masked ? 'Privacy option was on: names and addresses are masked.' : 'Privacy option was off.');
-    if (!masked && /password\s*=/i.test(text)) add('warn', 'The output may contain a password (e.g. in a database URL). Remove it from the saved file before sending, or run again with the privacy option.');
-    var label = value(text, 'uas_target_liferay_version') || '';
-    var ok = !checks.some(function (c) { return c[0] === 'err'; }) && keys.length > 0;
-    // a readable version for the file name: Quarterly Release (2026.Q3.9), CE GA level, or the version number
-    var quarterly = /(\d{4}\.Q[1-4](?:\.\d+)?)/.exec(releaseInfo || '');
-    var ga = /\bGA(\d+)\b/.exec(releaseInfo || '');
-    var edition = value(text, 'uas_target_liferay_edition');
-    var fileVersion = quarterly ? quarterly[1] : ((edition === 'CE' ? 'ce-' : '') + (release || label || 'liferay') + (edition === 'CE' && ga ? '-ga' + ga[1] : ''));
-    return { checks: checks, ok: ok, release: release, label: label, edition: edition, fileVersion: fileVersion };
-  }
-  function renderChecks() {
-    var text = $('output').value;
-    var ul = $('checks');
-    ul.innerHTML = '';
-    if (!text.trim()) { report = null; updateButtons(); return; }
-    report = analyse(text);
-    report.checks.forEach(function (c) {
-      var li = document.createElement('li');
-      var icon = document.createElement('span');
-      icon.className = 'icon ' + c[0];
-      icon.textContent = c[0] === 'ok' ? '✓' : (c[0] === 'warn' ? '!' : '✕');
-      icon.setAttribute('aria-label', c[0] === 'ok' ? 'OK' : (c[0] === 'warn' ? 'Warning' : 'Error'));
-      var span = document.createElement('span');
-      span.textContent = c[1];
-      li.appendChild(icon); li.appendChild(span); ul.appendChild(li);
-    });
-    updateButtons();
-  }
-  function updateButtons() {
-    $('saveReport').disabled = !report || !report.ok;
-    $('emailReport').disabled = !report || !report.ok;
-  }
-  function slug(s) { return (s || '').toLowerCase().replace(/[^a-z0-9.]+/g, '-').replace(/^-+|-+$/g, ''); }
-  function reportName() {
-    var company = slug($('company').value) || 'company';
-    var version = slug(report.fileVersion);
-    var d = new Date();
-    var date = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
-    return company + '_' + version + '_upgrade-report_' + date + '.txt';
-  }
-  $('output').addEventListener('input', renderChecks);
-  $('saveReport').addEventListener('click', function () {
-    var name = reportName();
-    download(name, $('output').value.replace(/\r?\n/g, '\r\n'));
-    status($('saveStatus'), 'ok', 'Saved as <code>' + name + '</code>. Attach this file to your Help Center ticket or e-mail.');
-  });
-  $('emailReport').addEventListener('click', function () {
-    var name = reportName();
-    var subject = 'Upgrade assessment report - ' + ($('company').value.trim() || 'company');
-    var body = 'Hello,\n\nPlease find attached the upgrade assessment report (' + name + ') for our Liferay installation (' +
-      (report.label || report.release || 'version in the report') + ').\n\nThank you.';
-    location.href = 'mailto:' + encodeURIComponent($('contact').value.trim()) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    status($('saveStatus'), 'warn', 'Your e-mail program opens with the message filled in. Remember to attach <code>' + name + '</code> (use "Save report" first).');
-  });
-
-  var drop = $('drop');
-  ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
-  ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
-  drop.addEventListener('drop', function (e) {
-    var f = e.dataTransfer.files && e.dataTransfer.files[0];
-    if (!f) return;
-    f.text().then(function (t) { $('output').value = t; renderChecks(); });
-  });
+  $('company').addEventListener('input', updateMail);
+  $('cc').addEventListener('input', updateMail);
 
   // deep link: ?version=dxp_2026_q3
   var preset = new URLSearchParams(location.search).get('version');
-  if (preset && byId[preset]) choose(preset);
+  choose(preset && byId[preset] ? preset : '');
 })();
 </script>
 </body>

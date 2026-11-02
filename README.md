@@ -5,8 +5,9 @@ data volumes, customizations and features in use. They cover Liferay Portal **Co
 Portal **EE** and Liferay **DXP**, including all **Quarterly Releases**.
 
 **Easiest way:** use the web page **https://lgsapac.github.io/liferay-upgrade-report-script/**. It finds the right
-script for your version, copies it for you (with an optional privacy setting), checks the output and saves the report
-file to send. It runs in your browser: nothing you paste is uploaded.
+script for your version, copies it for you (with an optional privacy setting), explains how to save the output and
+prepares the e-mail to Liferay. The report never goes through the page: you save it on your own computer and e-mail
+it to Liferay yourself.
 
 > [!IMPORTANT]
 > - The scripts are **read-only**: they only read configuration and count records. They do not change data or settings.
@@ -16,13 +17,19 @@ file to send. It runs in your browser: nothing you paste is uploaded.
 >   outside busy hours.
 > - You run these scripts **at your own risk**.
 
-The process has three steps:
+The Liferay upgrade program has five phases:
 
-| Step | Who | What |
-| --- | --- | --- |
-| 0 | You | Identify your Liferay edition and version, and download the matching script |
-| 1 | You | Run the script on UAT, save the output as a `.txt` file and send it to Liferay |
-| 2 | Liferay | Health check of your installation, and validation of whether you qualify for the Liferay upgrade program |
+| Phase | Step | Who | What |
+| --- | --- | --- | --- |
+| 1. Assessment | 0 | You | Identify your Liferay edition and version |
+| | 1 | You | Run the read-only script on UAT |
+| | 2 | You | Save the output as a `.txt` file and e-mail it to support@liferay.com |
+| | 3 | Liferay | Health check of your installation |
+| | 4 | Liferay, you | Qualification for the upgrade program; if you qualify, Liferay shares the contractual terms for sign-off |
+| 2. Preparation | 5 | You | Prepare the deliverables and hand them off to the Liferay Upgrade Team |
+| 3. Core solution upgrade | 6 | Liferay | Kick-off and upgrade execution, performed by Liferay (8 to 16 weeks) |
+| 4. Validation | 7 | You, Liferay | 30 days of UAT testing and fixes |
+| 5. Go-Live | 8 | You, Liferay | The upgraded solution goes live; support then comes from the Liferay Support team |
 
 ## Step 0: Identify your version
 
@@ -104,7 +111,7 @@ content).
 A Quarterly Release script works for every patch of that quarter (for example `dxp_2025_q1` for 2025.Q1.0 to
 2025.Q1.x).
 
-## Step 1: Run the script and send the output
+## Step 1: Run the script
 
 1. On your **UAT** environment, open **Server Administration** (see Step 0) and select the **Script** tab.
 2. Set **Language** to **Groovy**.
@@ -119,29 +126,56 @@ A Quarterly Release script works for every patch of that quarter (for example `d
 4. Click **Execute** and wait until the page reloads. Don't click again or close the page while it runs.
 5. The result appears in the **Output** box below the script. It starts with `"Key", "Value", "Description"` and
    ends with lines starting with `"uas_`.
-6. Save the output as a text file:
+
+Before you run it, make sure you identified your version in Step 0: a script for another version can fail or
+report wrong values.
+
+## Step 2: Save the output and send it to Liferay
+
+1. Save the output as a text file:
    - Click inside the **Output** box, select all of it (Ctrl+A / Cmd+A) and copy it (Ctrl+C / Cmd+C).
    - Windows: open **Notepad**, paste, then **File > Save As**, set **Save as type** to *Text Documents (\*.txt)*.
    - Mac: open **TextEdit**, choose **Format > Make Plain Text**, paste, then **File > Save** with a `.txt` name.
    - Name the file `<company>_<liferay-version>_upgrade-report_<yyyy-mm-dd>.txt`, for example
      `acme_ce-7.4-ga132_upgrade-report_2026-11-01.txt`.
-7. Check the file before sending it: it should contain the `"uas_end_date"` line at the end. If you see lines with
+2. Check the file before sending it: it should contain the `"uas_end_date"` line at the end. If you see lines with
    `UAS ERROR`, still send the file; it tells Liferay what could not be read.
-8. Send the `.txt` file to Liferay:
-   - **Liferay subscribers (EE / DXP):** open a ticket in the [Liferay Help Center](https://help.liferay.com),
-     choose your project, describe the request as *"Upgrade assessment report"*, and attach the `.txt` file.
-   - **Community Edition users, or if you prefer email:** email the `.txt` file as an attachment to your
-     **designated Liferay customer success contact**, with the subject *"Upgrade assessment report - <company>"*.
+3. E-mail the `.txt` file as an attachment to **support@liferay.com**, with the subject
+   *"Upgrade assessment report - <company>"*. If you know your **Liferay customer success contact**, put them in CC.
+   Don't paste the report into a website or chat: send it only as an e-mail attachment.
 
 The output contains technical details about your installation (versions, the database URL, plugin and site names,
 record counts) but no content from your sites, and the scripts do not read passwords. If you prefer not to share
-names and addresses, use the privacy option (see step 3); otherwise, if your JDBC URL contains a user name or
+names and addresses, use the privacy option (see Step 1); otherwise, if your JDBC URL contains a user name or
 password, remove them from the `.txt` file before sending it. Share the file only with Liferay.
 
-## Step 2: Liferay health check
+## Step 3: Liferay health check
 
-Liferay reviews the report, carries out a health check of your installation, and validates whether you qualify for
-the Liferay upgrade program. Your customer success contact will follow up with the results and the next steps.
+Liferay reviews the report and carries out a health check of your installation: version, infrastructure, data
+volumes, customizations, and features that are deprecated in newer releases.
+
+## Step 4: Qualification and agreement
+
+Liferay validates whether you qualify for the Liferay upgrade program. If you qualify, Liferay shares the
+contractual terms with you for sign-off.
+
+## Step 5: Preparation
+
+You prepare the deliverables for the upgrade and hand them off to the Liferay Upgrade Team. Liferay confirms the
+exact list; it typically includes a recent copy of the database and document library, the source code of your
+customizations, your configuration, and access to the environments and contacts the team needs.
+
+## Step 6: Core solution upgrade
+
+After the kick-off, Liferay performs the upgrade of your solution. This typically takes 8 to 16 weeks.
+
+## Step 7: Validation
+
+30 days of UAT testing of the upgraded solution; issues found are fixed.
+
+## Step 8: Go-Live
+
+The upgraded solution goes live. From then on, support comes from the Liferay Support team.
 
 ## If something fails
 
