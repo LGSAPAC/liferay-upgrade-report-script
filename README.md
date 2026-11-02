@@ -103,9 +103,9 @@ content).
 | Liferay DXP 7.3 | `dxp_7_3/dxp_7_3-all.groovy` |
 | Liferay DXP 7.4 (GA1 - Update 92) | `dxp_7_4/dxp_7_4-all.groovy` |
 | Liferay DXP 2023.Q3 | `dxp_2023_q3/dxp_2023_q3-all.groovy` |
-| Liferay DXP 2023.Q4 LTS | `dxp_2023_q4/dxp_2023_q4-all.groovy` |
-| Liferay DXP 2024.Q1 | `dxp_2024_q1/dxp_2024_q1-all.groovy` |
-| Liferay DXP 2024.Q2 LTS | `dxp_2024_q2/dxp_2024_q2-all.groovy` |
+| Liferay DXP 2023.Q4 | `dxp_2023_q4/dxp_2023_q4-all.groovy` |
+| Liferay DXP 2024.Q1 LTS | `dxp_2024_q1/dxp_2024_q1-all.groovy` |
+| Liferay DXP 2024.Q2 | `dxp_2024_q2/dxp_2024_q2-all.groovy` |
 | Liferay DXP 2024.Q3 | `dxp_2024_q3/dxp_2024_q3-all.groovy` |
 | Liferay DXP 2024.Q4 | `dxp_2024_q4/dxp_2024_q4-all.groovy` |
 | Liferay DXP 2025.Q1 LTS | `dxp_2025_q1/dxp_2025_q1-all.groovy` |
@@ -263,6 +263,17 @@ All scripts print CSV lines: `"Key", "Value", "Description"`.
   (`/sys/class/dmi/id`) and the domain suffix of the database and virtual host names; it makes no network calls and
   prints no host names. Liferay SaaS does not normally allow Groovy scripts, so for SaaS customers the hosting model
   is usually known without running the script.
+- **Support lifecycle and compatibility** (all scripts, 6.1 and later): `compat_support_phase` shows whether the
+  running release is in Premium Support, Limited Support or at end of life, with its first ship date, end of Premium
+  Support and end of life (Community Edition: no Liferay support). The running stack is then compared with the
+  Liferay DXP compatibility matrix of the upgrade targets 2026.Q1 LTS and 2026.Q3, each line with the value
+  `certified`, `deprecated` or `not certified`: `compat_jdk`, `compat_app_server`, `compat_database`, `compat_os`,
+  `compat_search_engine` (server version where available) and `compat_wysiwyg_editor`. Breaking changes of recent
+  releases that can be detected: `compat_breaking_moved_properties_count` (portal properties moved to System /
+  Instance Settings), `compat_breaking_configurations_count` (Data Cleanup / Removal configurations removed in
+  2026.Q1, Amazon S3 store settings affected by the AWS SDK 2 migration) and `compat_breaking_portlet_frameworks_count`
+  (PortletMVC4Spring and Liferay Faces / JSF portlets that need a Jakarta EE version from 2025.Q3).
+  `compat_issues_count` lists everything to address.
 - **Sizing and hidden customizations** (all 7.x, CE and Quarterly Release scripts):
   - Documents and Media: `data_dl_total_size_bytes`, `data_dl_all_versions_size_bytes` (approximate file store
     size to migrate), `data_dl_files_by_mime_type`

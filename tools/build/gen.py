@@ -1,6 +1,6 @@
 import os, re, sys
 repo, template = sys.argv[1], sys.argv[2]
-LTS = {'2023.Q4', '2024.Q2', '2025.Q1', '2026.Q1'}
+LTS = {'2024.Q1', '2025.Q1', '2026.Q1'}
 quarterlies = [f'{y}.Q{q}' for y in (2023, 2024, 2025, 2026) for q in (1, 2, 3, 4)]
 quarterlies = [r for r in quarterlies if '2023.Q3' <= r <= '2026.Q3']
 tpl = open(template).read()

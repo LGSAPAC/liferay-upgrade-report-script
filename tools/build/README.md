@@ -15,6 +15,7 @@ tools/build/build_all.sh
 | `deprecations_section.groovy` | the `6_deprecations` section of all 7.x scripts |
 | `additional_section.groovy` | the `7_additional_info` section of all 7.x scripts |
 | `hosting_section.groovy` | the `1_hosting` section (hosting model) of all scripts, 6.1 and later (via `hosting.py`) |
+| `compatibility_section.groovy` | the `1_compatibility` section (support lifecycle, compatibility matrix, detectable breaking changes) of all scripts, 6.1 and later (via `add_section.py`). Update the dates and matrix when a new release or matrix is published |
 | `ce_section.groovy` | the CE-only section of the `ce_*` scripts (via `gen_ce.py`, from the matching EE / DXP script) |
 | `harden.py` | applies the shared sections and robustness fixes to the template and to `dxp_7_0` - `dxp_7_3` (idempotent) |
 
