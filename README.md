@@ -209,6 +209,17 @@ The scripts are built to always finish and always print every key:
 
 If the page shows *Unable to execute script*, send the error text together with your version.
 
+If there is no **Script** tab, no **Groovy** language option, or the script is refused:
+
+- Sign in as an administrator of the **default virtual instance** (the first instance created). Server
+  Administration is only available to these administrators.
+- The **Script Management** setting in System Settings (Liferay DXP 2024.Q2 / Portal 7.4 GA120 and later, off by
+  default) only controls scripts in Workflow and Objects. It does not block the Script console, so you don't need to
+  change it to run this script.
+- Your organization may have switched off scripting for security, for example by disabling the Groovy scripting
+  module. Ask your Liferay administrator to allow it on the **UAT** environment for the assessment, and to switch it
+  off again afterwards if that is your policy.
+
 ## Output format
 
 All scripts print CSV lines: `"Key", "Value", "Description"`.

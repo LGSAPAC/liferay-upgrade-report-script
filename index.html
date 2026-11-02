@@ -338,6 +338,15 @@
           <li>Click <strong>Execute</strong> and wait until the page reloads. On large installations this can take a few minutes; don't click again.</li>
           <li>The result appears in the <strong>Output</strong> box. It starts with <code>"Key", "Value", "Description"</code> and ends with lines starting with <code>"uas_</code>.</li>
         </ol>
+        <details>
+          <summary>No Script tab, no Groovy option, or the script is refused?</summary>
+          <ul class="list">
+            <li>Sign in as an administrator of the <strong>default virtual instance</strong> (the first instance created). Server Administration is only available to these administrators.</li>
+            <li>The <strong>Script Management</strong> setting in System Settings (Liferay DXP 2024.Q2 / Portal 7.4 GA120 and later) only controls scripts in Workflow and Objects. You don't need to change it to run this script.</li>
+            <li>Your organization may have switched off scripting for security, for example by disabling the Groovy scripting module. Ask your Liferay administrator to allow it on the <strong>UAT</strong> environment for the assessment, and to switch it off again afterwards if that is your policy.</li>
+            <li>If you still can't run it, tell Liferay your version and what you see; we'll help.</li>
+          </ul>
+        </details>
       </div>
     </section>
 
