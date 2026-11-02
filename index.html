@@ -22,7 +22,7 @@
     --warn-soft: #fff4de;
     --err: #b3261e;
     --err-soft: #fde8e6;
-    --p1: #0b5fff; --p2: #7a4cd9; --p3: #c2410c; --p4: #0f766e; --p5: #1d7a3a;
+    --t-cs: #0b5fff; --t-cs-soft: #e8efff; --t-up: #b4440a; --t-up-soft: #fdeee4; --t-sup: #1d7a3a; --t-sup-soft: #e6f4ea;
     --radius: 10px;
     --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -33,7 +33,7 @@
       --bg: #12151a; --surface: #1a1e25; --surface-2: #222833; --text: #e6e9ee; --muted: #a2abb8;
       --border: #333b47; --accent: #6d9bff; --accent-text: #0b1220; --accent-soft: #1f2a44;
       --ok: #6fcf8f; --ok-soft: #173023; --warn: #f0b85c; --warn-soft: #33270f; --err: #ff8a80; --err-soft: #3a1b19;
-      --p1: #6d9bff; --p2: #b39af0; --p3: #fb923c; --p4: #2dd4bf; --p5: #6fcf8f;
+      --t-cs: #6d9bff; --t-cs-soft: #1f2a44; --t-up: #fb923c; --t-up-soft: #3a2414; --t-sup: #6fcf8f; --t-sup-soft: #173023;
       --shadow: none;
     }
   }
@@ -41,7 +41,7 @@
     --bg: #12151a; --surface: #1a1e25; --surface-2: #222833; --text: #e6e9ee; --muted: #a2abb8;
     --border: #333b47; --accent: #6d9bff; --accent-text: #0b1220; --accent-soft: #1f2a44;
     --ok: #6fcf8f; --ok-soft: #173023; --warn: #f0b85c; --warn-soft: #33270f; --err: #ff8a80; --err-soft: #3a1b19;
-    --p1: #6d9bff; --p2: #b39af0; --p3: #fb923c; --p4: #2dd4bf; --p5: #6fcf8f;
+    --t-cs: #6d9bff; --t-cs-soft: #1f2a44; --t-up: #fb923c; --t-up-soft: #3a2414; --t-sup: #6fcf8f; --t-sup-soft: #173023;
     --shadow: none;
   }
   * { box-sizing: border-box; }
@@ -58,7 +58,8 @@
   .phases a:hover { border-color: var(--pc); }
   .phases .pn { font-size: .75rem; font-weight: 700; color: var(--pc); text-transform: uppercase; letter-spacing: .04em; }
   .phases .pt { display: block; font-weight: 700; margin: 2px 0; line-height: 1.3; }
-  .phases .ps { font-size: .82rem; color: var(--muted); }
+  .phases .ps { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 8px; }
+  .phases .team { font-size: .72rem; white-space: normal; }
 
   .notice { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
   .pill { font-size: .85rem; padding: 4px 10px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
@@ -68,10 +69,12 @@
   .phase-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; border-bottom: 2px solid var(--pc); padding-bottom: 6px; }
   .phase-head .tag { font-size: .78rem; font-weight: 700; color: var(--pc); text-transform: uppercase; letter-spacing: .05em; }
   .phase-head h2 { margin: 0; font-size: 1.35rem; }
-  .phase-head .range { color: var(--muted); font-size: .9rem; margin-left: auto; }
+  .phase-head .range { color: var(--muted); font-size: .9rem; }
+  .phase-head .team { margin-left: auto; }
+  .phase section.step { border-left: 4px solid var(--pc); }
 
   section.step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; margin-top: 14px; }
-  .step-head { display: flex; align-items: baseline; gap: 12px; }
+  .step-head { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; }
   .step-num { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--pc); font-weight: 700; font-size: .95rem; border: 2px solid var(--pc); }
   .step h3 { font-size: 1.1rem; margin: 0; }
   .who { margin-left: auto; font-size: .78rem; font-weight: 600; color: var(--muted); background: var(--surface-2); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
@@ -126,34 +129,93 @@
   footer { margin-top: 34px; color: var(--muted); font-size: .9rem; text-align: center; }
   a { color: var(--accent); }
 
-  .ph1 { --pc: var(--p1); } .ph2 { --pc: var(--p2); } .ph3 { --pc: var(--p3); } .ph4 { --pc: var(--p4); } .ph5 { --pc: var(--p5); }
+  /* team colours: Customer Success (phases 1-2), Upgrade Team (phases 3-4), Support (phase 5) */
+  .team-cs { --pc: var(--t-cs); --pcs: var(--t-cs-soft); }
+  .team-up { --pc: var(--t-up); --pcs: var(--t-up-soft); }
+  .team-sup { --pc: var(--t-sup); --pcs: var(--t-sup-soft); }
+  .team { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; color: var(--pc); background: var(--pcs);
+          border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+  .team::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--pc); }
+  .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; font-size: .9rem; color: var(--muted); }
+
+  /* sticky navigation */
+  .nav { position: sticky; top: 0; z-index: 10; margin: 14px -16px 0; padding: 8px 16px; background: var(--bg);
+         border-bottom: 1px solid var(--border); }
+  .nav-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; }
+  .nav-row + .nav-row { margin-top: 6px; }
+  .nav a { flex: none; text-decoration: none; color: var(--text); font-size: .88rem; white-space: nowrap; }
+  .nav .np { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); }
+  .nav .np b { color: var(--pc); }
+  .nav .np[aria-current="true"] { background: var(--pc); border-color: var(--pc); color: var(--surface); }
+  .nav .np[aria-current="true"] b { color: inherit; }
+  .nav .ns { width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 50%; font-weight: 700; font-size: .8rem;
+             color: var(--pc); border: 2px solid var(--pc); background: var(--surface); }
+  .nav .ns[aria-current="true"] { background: var(--pc); color: var(--surface); }
+  .nav .steps-label { flex: none; align-self: center; font-size: .8rem; color: var(--muted); margin-right: 2px; }
+  .phase, section.step { scroll-margin-top: 110px; }
+  .pager { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; font-size: .92rem; }
+  .pager a { text-decoration: none; font-weight: 600; }
+  .pager .next { margin-left: auto; }
+  .totop { position: fixed; right: 16px; bottom: 16px; z-index: 11; border-radius: 999px; padding: 8px 14px; box-shadow: 0 2px 8px rgba(0,0,0,.18);
+           opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .totop.show { opacity: 1; pointer-events: auto; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .totop { transition: none; } }
 
   @media (max-width: 760px) {
     .phases { grid-template-columns: 1fr 1fr; }
     .lead, .body { margin-left: 0; }
     .grid2 { grid-template-columns: 1fr; }
-    .phase-head .range { margin-left: 0; width: 100%; }
+    .phase-head .team { margin-left: 0; }
+    .who { white-space: normal; margin-left: 42px; }
   }
 </style>
 </head>
 <body>
-<main>
+<main id="top">
   <header>
     <h1>Liferay Upgrade Program</h1>
     <p>From the upgrade assessment to go-live. Start with the assessment: identify your version, run the read-only script on your UAT environment and send the report to Liferay.</p>
 
     <ol class="phases" aria-label="Phases">
-      <li class="ph1"><a href="#phase-assessment"><span class="pn">Phase 1 · Steps 0–4</span><span class="pt">Assessment</span><span class="ps">Report, health check, qualification</span></a></li>
-      <li class="ph2"><a href="#phase-preparation"><span class="pn">Phase 2 · Step 5</span><span class="pt">Preparation</span><span class="ps">Deliverables to the Upgrade Team</span></a></li>
-      <li class="ph3"><a href="#phase-upgrade"><span class="pn">Phase 3 · Step 6</span><span class="pt">Core solution upgrade</span><span class="ps">8–16 weeks, performed by Liferay</span></a></li>
-      <li class="ph4"><a href="#phase-validation"><span class="pn">Phase 4 · Step 7</span><span class="pt">Validation</span><span class="ps">30 days of UAT testing and fixes</span></a></li>
-      <li class="ph5"><a href="#phase-golive"><span class="pn">Phase 5 · Step 8</span><span class="pt">Go-Live</span><span class="ps">Support by Liferay Support</span></a></li>
+      <li class="team-cs"><a href="#phase-assessment"><span class="pn">Phase 1 · Steps 0–4</span><span class="pt">Assessment</span><span class="ps">Report, health check, qualification</span><span class="team">Liferay Customer Success</span></a></li>
+      <li class="team-cs"><a href="#phase-preparation"><span class="pn">Phase 2 · Step 5</span><span class="pt">Preparation</span><span class="ps">Deliverables to the Upgrade Team</span><span class="team">Liferay Customer Success</span></a></li>
+      <li class="team-up"><a href="#phase-upgrade"><span class="pn">Phase 3 · Step 6</span><span class="pt">Core solution upgrade</span><span class="ps">8–16 weeks, performed by Liferay</span><span class="team">Liferay Upgrade Team</span></a></li>
+      <li class="team-up"><a href="#phase-validation"><span class="pn">Phase 4 · Step 7</span><span class="pt">Validation</span><span class="ps">30 days of UAT testing and fixes</span><span class="team">Liferay Upgrade Team</span></a></li>
+      <li class="team-sup"><a href="#phase-golive"><span class="pn">Phase 5 · Step 8</span><span class="pt">Go-Live</span><span class="ps">Go-live and ongoing support</span><span class="team">Liferay Support</span></a></li>
     </ol>
+    <div class="legend" aria-label="Who supports each phase">
+      <span>Your Liferay contact in each phase:</span>
+      <span class="team team-cs">Liferay Customer Success · phases 1–2</span>
+      <span class="team team-up">Liferay Upgrade Team · phases 3–4</span>
+      <span class="team team-sup">Liferay Support · phase 5</span>
+    </div>
   </header>
 
+  <nav class="nav" aria-label="Sections">
+    <div class="nav-row">
+      <a class="np team-cs" href="#phase-assessment"><b>1</b> Assessment</a>
+      <a class="np team-cs" href="#phase-preparation"><b>2</b> Preparation</a>
+      <a class="np team-up" href="#phase-upgrade"><b>3</b> Core upgrade</a>
+      <a class="np team-up" href="#phase-validation"><b>4</b> Validation</a>
+      <a class="np team-sup" href="#phase-golive"><b>5</b> Go-Live</a>
+    </div>
+    <div class="nav-row">
+      <span class="steps-label">Steps</span>
+      <a class="ns team-cs" href="#step0" title="Step 0: Identify your version">0</a>
+      <a class="ns team-cs" href="#step1" title="Step 1: Run the script on UAT">1</a>
+      <a class="ns team-cs" href="#step2" title="Step 2: Save and e-mail the report">2</a>
+      <a class="ns team-cs" href="#step3" title="Step 3: Health check">3</a>
+      <a class="ns team-cs" href="#step4" title="Step 4: Qualification and agreement">4</a>
+      <a class="ns team-cs" href="#step5" title="Step 5: Prepare the deliverables">5</a>
+      <a class="ns team-up" href="#step6" title="Step 6: Upgrade execution">6</a>
+      <a class="ns team-up" href="#step7" title="Step 7: UAT testing and fixes">7</a>
+      <a class="ns team-sup" href="#step8" title="Step 8: Go-Live">8</a>
+    </div>
+  </nav>
+
   <!-- ======================= PHASE 1: ASSESSMENT ======================= -->
-  <div class="phase ph1" id="phase-assessment">
-    <div class="phase-head"><span class="tag">Phase 1</span><h2>Assessment</h2><span class="range">Steps 0–4</span></div>
+  <div class="phase team-cs" id="phase-assessment">
+    <div class="phase-head"><span class="tag">Phase 1</span><h2>Assessment</h2><span class="range">Steps 0–4</span><span class="team">Supported by Liferay Customer Success</span></div>
     <div class="notice" role="note">
       <span class="pill">Read-only scripts</span>
       <span class="pill">Run on UAT / test only, never on production</span>
@@ -287,20 +349,21 @@
 
     <!-- STEP 3 -->
     <section class="step" id="step3" aria-labelledby="s3">
-      <div class="step-head"><span class="step-num">3</span><h3 id="s3">Health check</h3><span class="who">Liferay</span></div>
+      <div class="step-head"><span class="step-num">3</span><h3 id="s3">Health check</h3><span class="who">Liferay Customer Success</span></div>
       <p class="lead">Liferay reviews your report and carries out a health check of your installation: version, infrastructure, data volumes, customizations and features that are deprecated in newer releases.</p>
     </section>
 
     <!-- STEP 4 -->
     <section class="step" id="step4" aria-labelledby="s4">
-      <div class="step-head"><span class="step-num">4</span><h3 id="s4">Qualification and agreement</h3><span class="who">Liferay → You</span></div>
+      <div class="step-head"><span class="step-num">4</span><h3 id="s4">Qualification and agreement</h3><span class="who">Liferay Customer Success → You</span></div>
       <p class="lead">Liferay validates whether you qualify for the Liferay upgrade program. If you qualify, Liferay shares the contractual terms with you for sign-off.</p>
     </section>
+    <div class="pager"><a class="next" href="#phase-preparation">Next: Preparation →</a></div>
   </div>
 
   <!-- ======================= PHASE 2: PREPARATION ======================= -->
-  <div class="phase ph2" id="phase-preparation">
-    <div class="phase-head"><span class="tag">Phase 2</span><h2>Preparation</h2><span class="range">Step 5</span></div>
+  <div class="phase team-cs" id="phase-preparation">
+    <div class="phase-head"><span class="tag">Phase 2</span><h2>Preparation</h2><span class="range">Step 5</span><span class="team">Supported by Liferay Customer Success</span></div>
     <section class="step" id="step5" aria-labelledby="s5">
       <div class="step-head"><span class="step-num">5</span><h3 id="s5">Prepare the deliverables for the Liferay Upgrade Team</h3><span class="who">You</span></div>
       <p class="lead">Prepare the deliverables for the upgrade and hand them off to the Liferay Upgrade Team. Liferay confirms the exact list with you; it typically includes:</p>
@@ -313,41 +376,46 @@
         </ul>
       </div>
     </section>
+    <div class="pager"><a class="prev" href="#phase-assessment">← Assessment</a><a class="next" href="#phase-upgrade">Next: Core solution upgrade →</a></div>
   </div>
 
   <!-- ======================= PHASE 3: CORE SOLUTION UPGRADE ======================= -->
-  <div class="phase ph3" id="phase-upgrade">
-    <div class="phase-head"><span class="tag">Phase 3</span><h2>Core solution upgrade</h2><span class="range">Step 6</span></div>
+  <div class="phase team-up" id="phase-upgrade">
+    <div class="phase-head"><span class="tag">Phase 3</span><h2>Core solution upgrade</h2><span class="range">Step 6</span><span class="team">Supported by Liferay Upgrade Team</span></div>
     <section class="step" id="step6" aria-labelledby="s6">
-      <div class="step-head"><span class="step-num">6</span><h3 id="s6">Upgrade execution</h3><span class="who">Liferay</span></div>
+      <div class="step-head"><span class="step-num">6</span><h3 id="s6">Upgrade execution</h3><span class="who">Liferay Upgrade Team</span></div>
       <p class="lead">After the kick-off, Liferay performs the upgrade of your solution.</p>
       <div class="body"><div class="facts"><span class="fact">Duration: 8–16 weeks</span><span class="fact">Performed by Liferay</span></div></div>
     </section>
+    <div class="pager"><a class="prev" href="#phase-preparation">← Preparation</a><a class="next" href="#phase-validation">Next: Validation →</a></div>
   </div>
 
   <!-- ======================= PHASE 4: VALIDATION ======================= -->
-  <div class="phase ph4" id="phase-validation">
-    <div class="phase-head"><span class="tag">Phase 4</span><h2>Validation</h2><span class="range">Step 7</span></div>
+  <div class="phase team-up" id="phase-validation">
+    <div class="phase-head"><span class="tag">Phase 4</span><h2>Validation</h2><span class="range">Step 7</span><span class="team">Supported by Liferay Upgrade Team</span></div>
     <section class="step" id="step7" aria-labelledby="s7">
-      <div class="step-head"><span class="step-num">7</span><h3 id="s7">UAT testing and fixes</h3><span class="who">You + Liferay</span></div>
+      <div class="step-head"><span class="step-num">7</span><h3 id="s7">UAT testing and fixes</h3><span class="who">You + Liferay Upgrade Team</span></div>
       <p class="lead">You test the upgraded solution in UAT; issues found are fixed.</p>
       <div class="body"><div class="facts"><span class="fact">Duration: 30 days</span><span class="fact">UAT testing and fixes</span></div></div>
     </section>
+    <div class="pager"><a class="prev" href="#phase-upgrade">← Core solution upgrade</a><a class="next" href="#phase-golive">Next: Go-Live →</a></div>
   </div>
 
   <!-- ======================= PHASE 5: GO-LIVE ======================= -->
-  <div class="phase ph5" id="phase-golive">
-    <div class="phase-head"><span class="tag">Phase 5</span><h2>Go-Live</h2><span class="range">Step 8</span></div>
+  <div class="phase team-sup" id="phase-golive">
+    <div class="phase-head"><span class="tag">Phase 5</span><h2>Go-Live</h2><span class="range">Step 8</span><span class="team">Supported by Liferay Support</span></div>
     <section class="step" id="step8" aria-labelledby="s8">
-      <div class="step-head"><span class="step-num">8</span><h3 id="s8">Go-Live</h3><span class="who">You + Liferay</span></div>
+      <div class="step-head"><span class="step-num">8</span><h3 id="s8">Go-Live</h3><span class="who">You + Liferay Support</span></div>
       <p class="lead">The upgraded solution goes live. From then on, support comes from the Liferay Support team.</p>
     </section>
+    <div class="pager"><a class="prev" href="#phase-validation">← Validation</a><a class="next" href="#top">Back to top ↑</a></div>
   </div>
 
   <footer>
     Scripts and documentation: <a href="https://github.com/LGSAPAC/liferay-upgrade-report-script" rel="noopener">github.com/LGSAPAC/liferay-upgrade-report-script</a>
   </footer>
 </main>
+<a class="button totop" id="toTop" href="#top" aria-label="Back to top">↑ Top</a>
 
 <script>
 (function () {
@@ -552,6 +620,59 @@
   }
   $('company').addEventListener('input', updateMail);
   $('cc').addEventListener('input', updateMail);
+
+  // ---- navigation: highlight the phase and step on screen ------------------------------------------------
+  (function () {
+    var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+    var targets = navLinks.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+    var navBar = document.querySelector('.nav');
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var line = navBar.getBoundingClientRect().bottom + 80;
+      var phase = null, step = null;
+      targets.forEach(function (t, i) {
+        if (t && t.getBoundingClientRect().top <= line) {
+          if (navLinks[i].classList.contains('np')) phase = navLinks[i]; else step = navLinks[i];
+        }
+      });
+      // keep the step inside the highlighted phase
+      if (phase && step) {
+        var phaseEl = document.getElementById(phase.getAttribute('href').slice(1));
+        var stepEl = document.getElementById(step.getAttribute('href').slice(1));
+        if (!phaseEl.contains(stepEl)) {
+          var first = phaseEl.querySelector('section.step');
+          step = navLinks.filter(function (x) { return x.getAttribute('href') === '#' + first.id; })[0] || step;
+        }
+      }
+      // at the end of the page the last sections cannot reach the top: follow the section that was jumped to
+      var atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      var jumped = location.hash && document.getElementById(location.hash.slice(1));
+      if (atBottom && jumped && jumped.getBoundingClientRect().top < window.innerHeight) {
+        var ph = jumped.classList.contains('phase') ? jumped : jumped.closest('.phase');
+        var st = jumped.classList.contains('step') ? jumped : ph && ph.querySelector('section.step');
+        navLinks.forEach(function (a) {
+          var h = a.getAttribute('href').slice(1);
+          if (ph && h === ph.id) phase = a;
+          if (st && h === st.id) step = a;
+        });
+      }
+      navLinks.forEach(function (a) {
+        var on = a === phase || a === step;
+        if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+      });
+      [phase, step].forEach(function (a) {
+        if (!a) return;
+        var row = a.parentNode, l = a.offsetLeft - row.offsetLeft, r = l + a.offsetWidth;
+        if (l < row.scrollLeft || r > row.scrollLeft + row.clientWidth) row.scrollLeft = l - 16;
+      });
+      $('toTop').classList.toggle('show', window.scrollY > 600);
+    }
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener('resize', update);
+    window.addEventListener('hashchange', update);
+    update();
+  })();
 
   // deep link: ?version=dxp_2026_q3
   var preset = new URLSearchParams(location.search).get('version');

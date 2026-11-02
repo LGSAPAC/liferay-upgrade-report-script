@@ -31,6 +31,14 @@ The Liferay upgrade program has five phases:
 | 4. Validation | 7 | You, Liferay | 30 days of UAT testing and fixes |
 | 5. Go-Live | 8 | You, Liferay | The upgraded solution goes live; support then comes from the Liferay Support team |
 
+Your Liferay contact in each phase:
+
+| Phases | Liferay team |
+| --- | --- |
+| 1. Assessment, 2. Preparation | Liferay Customer Success |
+| 3. Core solution upgrade, 4. Validation | Liferay Upgrade Team |
+| 5. Go-Live | Liferay Support |
+
 ## Step 0: Identify your version
 
 The quickest way: run [`identify_version.groovy`](identify_version.groovy) in the Script console (see Step 1 for
