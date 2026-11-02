@@ -2,6 +2,14 @@
 
 def DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH.mm.ss.SSSSS Z"
 
+// ---------------------------------------------------------------------------------------------------------------
+// PRIVACY OPTION
+// Set to true to mask site names, site URLs, virtual instance names / web IDs, virtual hosts, host names in URLs,
+// e-mail addresses, IP addresses, the database location and installation paths in the output. All counts and
+// technical details are kept, so the report can still be assessed.
+def UAS_MASK_PRIVATE_DATA = false
+// ---------------------------------------------------------------------------------------------------------------
+
 // the @...@ tokens can in theory contain ' or ", so use a safe way to write these as Groovy String literals
 def uasMetadata = [
         projectVersion: """\
@@ -26,6 +34,72 @@ uasMetadata['startDateFormatted'] = uasMetadata['startDate'].format(DEFAULT_DATE
  * All utility methods from <code>src/common/_utils.groovy</code>.
  */
 class UASUtils {
+
+    // ---- Privacy option: see UAS_MASK_PRIVATE_DATA at the top of the script and '_uas_privacy.groovy' ----
+    static boolean maskEnabled = false
+    static Map<String, String> maskTokens = [:]
+    static Map<String, String> maskPseudonyms = [:]
+    static Map<String, Integer> maskCounters = [:]
+    static java.util.regex.Pattern maskTokenPattern = null
+    private static final List<String> _MASK_IGNORED = [
+            'guest', 'global', '/guest', '/global', 'liferay', 'liferay.com', 'liferay dxp', 'liferay portal',
+            'localhost', 'control panel', '/control_panel', 'true', 'false', 'null', 'default']
+
+    static String pseudonym(String category, String value) {
+        def key = category + '|' + value
+        if (!maskPseudonyms.containsKey(key)) {
+            def n = (maskCounters[category] ?: 0) + 1
+            maskCounters[category] = n
+            maskPseudonyms[key] = (category + '-' + n).toString()
+        }
+        return maskPseudonyms[key]
+    }
+
+    // entity: groupId / companyId, so that all names of one site (all languages, raw / localized) get the same placeholder
+    static void addMaskToken(String category, Object value, Object entity = null) {
+        def text = value?.toString()?.trim()
+        if (!text || text.length() < 3 || (text.toLowerCase() in _MASK_IGNORED) || maskTokens.containsKey(text)) {
+            return
+        }
+        maskTokens[text] = pseudonym(category, entity != null ? 'id:' + entity : text)
+    }
+
+    static void compileMaskTokens() {
+        if (maskTokens) {
+            def alternatives = maskTokens.keySet().sort { -it.length() }.collect { token ->
+                def quoted = java.util.regex.Pattern.quote(token)
+                (Character.isLetterOrDigit(token.charAt(0)) ? '(?<![\\w-])' : '') + quoted + '(?![\\w-])'
+            }
+            maskTokenPattern = java.util.regex.Pattern.compile(alternatives.join('|'))
+        }
+    }
+
+    static String mask(String text) {
+        if (!maskEnabled || !text) {
+            return text
+        }
+        String result = text
+        // database URLs: keep the database type only
+        result = result.replaceAll(/(jdbc:[A-Za-z0-9]+:)[^\s"]*/, '$1[masked]')
+        // host names in URLs
+        result = result.replaceAll(/(?i)\b((?:https?|ftps?|wss?):\/\/)([^\/\s:"'<>?#]+)/) { all, scheme, host ->
+            scheme + pseudonym('host', host.toLowerCase())
+        }
+        // e-mail addresses and IP:port
+        result = result.replaceAll(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/) { all -> pseudonym('email', all.toLowerCase()) }
+        result = result.replaceAll(/\b(?:\d{1,3}\.){3}\d{1,3}(?=:\d+)/) { all -> pseudonym('ip', all) }
+        // site names, site URLs, instances, virtual hosts, database names, paths
+        if (maskTokenPattern != null) {
+            def matcher = maskTokenPattern.matcher(result)
+            def buffer = new StringBuffer()
+            while (matcher.find()) {
+                matcher.appendReplacement(buffer, java.util.regex.Matcher.quoteReplacement(maskTokens[matcher.group()] ?: matcher.group()))
+            }
+            matcher.appendTail(buffer)
+            result = buffer.toString()
+        }
+        return result
+    }
 
     private final Script _script
     private final Map<String, Object> _uasContext
@@ -97,7 +171,7 @@ class UASUtils {
     static String toCSVLine(Object... cells) {
         def csvLine =
                 cells.collect {
-                    '"' + escapeCSV(it?.toString() ?: '') + '"'
+                    '"' + escapeCSV(mask(it?.toString() ?: '')) + '"'
                 }.join(', ')
 
         return csvLine
@@ -142,6 +216,89 @@ class TableInfo implements Comparable<TableInfo> {
 
 
 // END included '_utils.groovy'
+
+// BEGIN included '_uas_privacy.groovy'
+// Privacy option (UAS_MASK_PRIVATE_DATA at the top of the script). When it is true, names and addresses that
+// identify the organization are replaced in the output with stable placeholders (site-1, url-1, instance-1,
+// host-1, db-1, email-1, path-1, ...). Counts, versions and technical details are kept, so the report can
+// still be assessed. Read-only; works on Liferay 6.1 and later.
+
+def uasInitPrivacy(boolean enabled) {
+    UASUtils.maskEnabled = enabled
+    if (!enabled) {
+        return
+    }
+    def load = { String className ->
+        try {
+            return Class.forName(className, true, this.getClass().getClassLoader())
+        } catch (Throwable ignored) {
+            return null
+        }
+    }
+    def propsUtil = load('com.liferay.portal.kernel.util.PropsUtil')
+    def restrictions = load('com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil')
+
+    // Virtual instances
+    try {
+        def companyService = load('com.liferay.portal.kernel.service.CompanyLocalServiceUtil') ?: load('com.liferay.portal.service.CompanyLocalServiceUtil')
+        companyService.getCompanies().each { company ->
+            UASUtils.addMaskToken('instance', company.webId, company.companyId)
+            try { UASUtils.addMaskToken('instance', company.name, company.companyId) } catch (Throwable ignored) {}
+            try { UASUtils.addMaskToken('host', company.virtualHostname) } catch (Throwable ignored) {}
+            try { UASUtils.addMaskToken('host', company.mx) } catch (Throwable ignored) {}
+        }
+    } catch (Throwable ignored) {
+    }
+
+    // Sites: names (all languages) and friendly URLs
+    try {
+        def groupService = load('com.liferay.portal.kernel.service.GroupLocalServiceUtil') ?: load('com.liferay.portal.service.GroupLocalServiceUtil')
+        def query = groupService.dynamicQuery()
+        query.add(restrictions.eq('site', true))
+        groupService.dynamicQuery(query).each { group ->
+            try { group.getNameMap().values().each { UASUtils.addMaskToken('site', it, group.groupId) } } catch (Throwable ignored) {}
+            try { UASUtils.addMaskToken('site', group.nameCurrentValue, group.groupId) } catch (Throwable ignored) {}
+            try { UASUtils.addMaskToken('site', group.getName(), group.groupId) } catch (Throwable ignored) {}
+            try { UASUtils.addMaskToken('site', group.getDescriptiveName(), group.groupId) } catch (Throwable ignored) {}
+            try { UASUtils.addMaskToken('url', group.friendlyURL, group.groupId) } catch (Throwable ignored) {}
+        }
+    } catch (Throwable ignored) {
+    }
+
+    // Virtual hosts (7.x)
+    try {
+        load('com.liferay.portal.kernel.service.VirtualHostLocalServiceUtil')?.getVirtualHosts(-1, -1)?.each {
+            UASUtils.addMaskToken('host', it.hostname)
+        }
+    } catch (Throwable ignored) {
+    }
+
+    // Database location and installation paths
+    try {
+        def jdbcUrl = propsUtil?.get('jdbc.default.url')
+        def hostMatcher = (jdbcUrl ?: '') =~ /\/\/([^\/:;?]+)/
+        if (hostMatcher.find()) {
+            UASUtils.addMaskToken('host', hostMatcher.group(1))
+        }
+        def dbMatcher = (jdbcUrl ?: '') =~ /\/([A-Za-z0-9_\-]+)(?:\?|;|$)/
+        if (dbMatcher.find()) {
+            UASUtils.addMaskToken('db', dbMatcher.group(1))
+        }
+        UASUtils.addMaskToken('db', propsUtil?.get('jdbc.default.username'))
+        UASUtils.addMaskToken('db', propsUtil?.get('jdbc.default.jndi.name'))
+    } catch (Throwable ignored) {
+    }
+    try {
+        [propsUtil?.get('liferay.home'), System.getProperty('catalina.home'), System.getProperty('catalina.base')].each {
+            UASUtils.addMaskToken('path', it)
+        }
+    } catch (Throwable ignored) {
+    }
+    UASUtils.compileMaskTokens()
+}
+
+// END included '_uas_privacy.groovy'
+
 
 // BEGIN included '1_infra.groovy'  
 
@@ -975,6 +1132,8 @@ println UASUtils.toCSVLine(
 // END included '4_custom_code.groovy'
 
 // invoke the topic scripts' wrapper functions                         
+uasInitPrivacy(UAS_MASK_PRIVATE_DATA)
+
 def uasContext = [ debug: false ]
 
 invoke__1_infra_groovy(uasContext)
@@ -997,6 +1156,7 @@ uasMetadata['duration'] =
 println """\
     ${UASUtils.toCSVLine('uas_version', uasMetadata['projectVersion'])}
     ${UASUtils.toCSVLine('uas_target_liferay_version', uasMetadata['sourceSetLabel'])}
+    ${UASUtils.toCSVLine('uas_private_data_masked', UAS_MASK_PRIVATE_DATA)}
     ${UASUtils.toCSVLine('uas_start_date', uasMetadata['startDateFormatted'])}  
     ${UASUtils.toCSVLine('uas_end_date', uasMetadata['endDateFormatted'])}  
     ${UASUtils.toCSVLine('uas_duration', uasMetadata['duration'])}  

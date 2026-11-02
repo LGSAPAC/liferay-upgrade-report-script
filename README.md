@@ -105,6 +105,13 @@ A Quarterly Release script works for every patch of that quarter (for example `d
 1. On your **UAT** environment, open **Server Administration** (see Step 0) and select the **Script** tab.
 2. Set **Language** to **Groovy**.
 3. Delete the sample code in the script box, and paste the **whole** content of the script you downloaded.
+   - **Optional, privacy:** to hide names and addresses, change `def UAS_MASK_PRIVATE_DATA = false` to
+     `def UAS_MASK_PRIVATE_DATA = true` near the top of the pasted script. Site names, site URLs, virtual instance
+     names / web IDs, virtual hosts, host names, e-mail addresses, IP addresses, the database location and
+     installation paths are then replaced with placeholders such as `site-1`, `url-1` or `host-1` (the same
+     placeholder every time the same value appears). All counts stay the same, and the output contains
+     `"uas_private_data_masked", "true"`. Names of custom code (portlets, plugins, modules, themes, object
+     definitions) are not masked, because Liferay needs them to assess the upgrade.
 4. Click **Execute** and wait until the page reloads. Don't click again or close the page while it runs.
 5. The result appears in the **Output** box below the script. It starts with `"Key", "Value", "Description"` and
    ends with lines starting with `"uas_`.
@@ -123,9 +130,9 @@ A Quarterly Release script works for every patch of that quarter (for example `d
      **designated Liferay customer success contact**, with the subject *"Upgrade assessment report - <company>"*.
 
 The output contains technical details about your installation (versions, the database URL, plugin and site names,
-record counts) but no content from your sites. The scripts do not read passwords; however, the database URL is
-included as it is configured, so if your JDBC URL contains a user name or password, remove them from the `.txt` file
-before sending it. Share the file only with Liferay.
+record counts) but no content from your sites, and the scripts do not read passwords. If you prefer not to share
+names and addresses, use the privacy option (see step 3); otherwise, if your JDBC URL contains a user name or
+password, remove them from the `.txt` file before sending it. Share the file only with Liferay.
 
 ## Step 2: Liferay health check
 

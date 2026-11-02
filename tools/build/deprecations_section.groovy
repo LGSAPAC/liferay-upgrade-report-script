@@ -124,21 +124,54 @@ def invoke__6_deprecations_groovy(Map<String, Object> uasContext) {
                 plids << plid
             }
 
-            // Widgets placed on pages (ownerType 3 = PortletKeys.PREFS_OWNER_TYPE_LAYOUT): the distinct portlet IDs
-            // first, then the pages of the deprecated ones only, instead of loading every preferences row
-            def idQuery = preferencesService.dynamicQuery()
-            idQuery.add(restrictions.eq('ownerType', 3))
-            idQuery.setProjection(projections.distinct(projections.property('portletId')))
-            preferencesService.dynamicQuery(idQuery).collect { it as String }.findAll { matchesCheck(it) }.each { portletId ->
-                def plidQuery = preferencesService.dynamicQuery()
-                plidQuery.add(restrictions.eq('ownerType', 3))
-                plidQuery.add(restrictions.eq('portletId', portletId))
-                plidQuery.setProjection(projections.distinct(projections.property('plid')))
-                preferencesService.dynamicQuery(plidQuery).each { plid ->
-                    if ((plid as long) > 0) {
-                        addPlid(portletId, plid as long)
+            // Widgets placed on pages (ownerType 3 = PortletKeys.PREFS_OWNER_TYPE_LAYOUT): one read-only SQL scan returning only
+            // the rows of the deprecated widgets, processed row by row with a per-widget cache (no entities in memory, no
+            // regular expressions per row), so that millions of portlet preferences rows stay fast and use little memory
+            // Lowercase parts that appear literally in the widget IDs (module names), so that the database can use a plain,
+            // case-sensitive LIKE (lower() on every row and pattern is several times slower); the exact, case-insensitive
+            // check per widget is done once per distinct widget ID below
+            def widgetPatterns = ['message_boards_web_portlet', 'wiki_web_portlet', 'microblogs_web', 'questions_web', 'activities_web',
+                                  'contacts_web', 'group_statistics_web', 'invite_members_web', 'document_library_web_portlet',
+                                  'subscription', 'sharing_web', 'sites_directory', 'site_navigation_directory', 'xsl_content_web',
+                                  'most_viewed', 'walkthrough', 'social_networking', 'journal_content_search_web',
+                                  'dynamic_data_lists_web', 'kaleo_forms_web', 'bookmarks_web', 'flash_web', 'portal_search_web_portlet',
+                                  'polls_web', 'asset_publisher_web', 'IGDisplay', 'SitesDirectory', 'MostViewed', 'SharedAssets',
+                                  'Subscription', 'Walkthrough', 'PollsDisplay']
+            def sql = 'select portletId, plid from PortletPreferences where ownerType = 3 and plid > 0 and (' +
+                    widgetPatterns.collect { 'portletId like ?' }.join(' or ') + ')'
+            Map<String, Boolean> rootMatches = new HashMap<String, Boolean>()
+            def connection = null
+            def statement = null
+            def resultSet = null
+            try {
+                connection = com.liferay.portal.kernel.dao.jdbc.DataAccess.getConnection()
+                statement = connection.prepareStatement(sql, java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
+                widgetPatterns.eachWithIndex { pattern, index -> statement.setString(index + 1, '%' + pattern + '%') }
+                statement.setFetchSize(5000)
+                resultSet = statement.executeQuery()
+                while (resultSet.next()) {
+                    String portletId = resultSet.getString(1)
+                    if (portletId == null) {
+                        continue
+                    }
+                    int instance = portletId.indexOf('_INSTANCE_')
+                    String root = (instance > 0 ? portletId.substring(0, instance) : portletId).toLowerCase()
+                    Boolean matches = rootMatches.get(root)
+                    if (matches == null) {
+                        matches = matchesCheck(root)
+                        rootMatches.put(root, matches)
+                    }
+                    if (matches) {
+                        def plids = portletIdToPlids.get(root)
+                        if (plids == null) {
+                            plids = new HashSet<Long>()
+                            portletIdToPlids.put(root, plids)
+                        }
+                        plids.add(resultSet.getLong(2))
                     }
                 }
+            } finally {
+                com.liferay.portal.kernel.dao.jdbc.DataAccess.cleanUp(connection, statement, resultSet)
             }
 
             // Widgets placed on widget pages are also stored in the page layout (column-N=portletId,...), even when
