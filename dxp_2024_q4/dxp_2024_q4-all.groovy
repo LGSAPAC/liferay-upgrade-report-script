@@ -3846,7 +3846,10 @@ def invoke__1_compatibility_groovy(Map<String, Object> uasContext) {
                 bundleContext.bundles.each { bundle ->
                     def name = bundle.symbolicName ?: ''
                     def imports = bundle.headers?.get('Import-Package')?.toString() ?: ''
-                    if (name.startsWith('com.liferay.') && !(bundle.location ?: '').contains('/osgi/war/') && !(bundle.location ?: '').contains('/deploy/')) {
+                    // only modules and WARs deployed by the customer (not the libraries shipped with Liferay)
+                    def location = (bundle.location ?: '').toLowerCase()
+                    if (!(location.contains('/osgi/modules/') || location.contains('/osgi/war/') || location.startsWith('webbundle:') ||
+                            location.contains('/deploy/'))) {
                         return
                     }
                     def frameworks = []
