@@ -1,9 +1,12 @@
 #!/bin/bash
 # Rebuilds all version scripts from the sources in this folder. Run from anywhere:
 #   tools/build/build_all.sh
+# Change VERSION (repository root) whenever the scripts change; it is printed as uas_version.
 # Edit the *_section.groovy files / quarterly_template.groovy here, not the generated *-all.groovy files.
 set -e
 G=$(cd "$(dirname "$0")" && pwd); R=$(cd "$G/../.." && pwd)
+python3 "$G/stamp_version.py" "$R/VERSION" "$G/quarterly_template.groovy" "$R/ee_6_1/ee_6_1-all.groovy" "$R/ee_6_2/ee_6_2-all.groovy" \
+    "$R/dxp_7_0/dxp_7_0-all.groovy" "$R/dxp_7_1/dxp_7_1-all.groovy" "$R/dxp_7_2/dxp_7_2-all.groovy" "$R/dxp_7_3/dxp_7_3-all.groovy"
 T="$G/quarterly_template.groovy $R/dxp_7_0/dxp_7_0-all.groovy $R/dxp_7_1/dxp_7_1-all.groovy $R/dxp_7_2/dxp_7_2-all.groovy $R/dxp_7_3/dxp_7_3-all.groovy"
 python3 "$G/privacy.py" "$G/quarterly_template.groovy" "$R/ee_6_1/ee_6_1-all.groovy" "$R/ee_6_2/ee_6_2-all.groovy" \
     "$R/dxp_7_0/dxp_7_0-all.groovy" "$R/dxp_7_1/dxp_7_1-all.groovy" "$R/dxp_7_2/dxp_7_2-all.groovy" "$R/dxp_7_3/dxp_7_3-all.groovy" >/dev/null
