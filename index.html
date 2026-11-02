@@ -122,8 +122,6 @@
   .status.warn { background: var(--warn-soft); color: var(--warn); }
   .status.err { background: var(--err-soft); color: var(--err); }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-  .fact { font-size: .85rem; background: var(--surface-2); border-radius: 6px; padding: 4px 10px; }
   details { margin-top: 12px; }
   summary { cursor: pointer; color: var(--accent); font-weight: 600; }
   footer { margin-top: 34px; color: var(--muted); font-size: .9rem; text-align: center; }
@@ -179,8 +177,8 @@
     <ol class="phases" aria-label="Phases">
       <li class="team-cs"><a href="#phase-assessment"><span class="pn">Phase 1 · Steps 0–4</span><span class="pt">Assessment</span><span class="ps">Report, health check, qualification</span><span class="team">Liferay Customer Success</span></a></li>
       <li class="team-cs"><a href="#phase-preparation"><span class="pn">Phase 2 · Step 5</span><span class="pt">Preparation</span><span class="ps">Deliverables to the Upgrade Team</span><span class="team">Liferay Customer Success</span></a></li>
-      <li class="team-up"><a href="#phase-upgrade"><span class="pn">Phase 3 · Step 6</span><span class="pt">Core solution upgrade</span><span class="ps">8–16 weeks, performed by Liferay</span><span class="team">Liferay Upgrade Team</span></a></li>
-      <li class="team-up"><a href="#phase-validation"><span class="pn">Phase 4 · Step 7</span><span class="pt">Validation</span><span class="ps">30 days of UAT testing and fixes</span><span class="team">Liferay Upgrade Team</span></a></li>
+      <li class="team-up"><a href="#phase-upgrade"><span class="pn">Phase 3 · Step 6</span><span class="pt">Core solution upgrade</span><span class="ps">Performed by Liferay</span><span class="team">Liferay Upgrade Team</span></a></li>
+      <li class="team-up"><a href="#phase-validation"><span class="pn">Phase 4 · Step 7</span><span class="pt">Validation</span><span class="ps">UAT testing and fixes</span><span class="team">Liferay Upgrade Team</span></a></li>
       <li class="team-sup"><a href="#phase-golive"><span class="pn">Phase 5 · Step 8</span><span class="pt">Go-Live</span><span class="ps">Go-live and ongoing support</span><span class="team">Liferay Support</span></a></li>
     </ol>
     <div class="legend" aria-label="Who supports each phase">
@@ -315,8 +313,8 @@
 
     <!-- STEP 2 -->
     <section class="step" id="step2" aria-labelledby="s2">
-      <div class="step-head"><span class="step-num">2</span><h3 id="s2">Save the output as a .txt file and e-mail it to Liferay</h3><span class="who">You</span></div>
-      <p class="lead">Save the result on your own computer, then send it to Liferay Support by e-mail.</p>
+      <div class="step-head"><span class="step-num">2</span><h3 id="s2">Save the output as a .txt file and send it to Liferay</h3><span class="who">You</span></div>
+      <p class="lead">Save the result on your own computer, then send it to Liferay by e-mail or as a support ticket.</p>
       <div class="body">
         <p><strong>Save the output:</strong></p>
         <ol class="list">
@@ -326,7 +324,8 @@
           <li>Name the file <code>&lt;company&gt;_&lt;liferay-version&gt;_upgrade-report_&lt;yyyy-mm-dd&gt;.txt</code>, for example <code>acme_dxp-7.3_upgrade-report_2026-11-02.txt</code>.</li>
           <li>Check that the last lines start with <code>"uas_</code> (for example <code>"uas_end_date"</code>). If some lines contain <code>UAS ERROR</code>, send the file anyway: it tells Liferay what could not be read.</li>
         </ol>
-        <p><strong>Send it:</strong></p>
+        <p><strong>Send it</strong>, by e-mail or as a support ticket. Send the report only as an attachment; don't paste it into a website or chat.</p>
+        <p><strong>Option A: e-mail</strong></p>
         <ol class="list">
           <li>E-mail the <code>.txt</code> file as an attachment to <a href="mailto:support@liferay.com">support@liferay.com</a>.</li>
           <li>Put your <strong>Liferay customer success contact</strong> in <strong>CC</strong>, if you know who it is.</li>
@@ -343,6 +342,15 @@
             <div><label for="cc">Customer success contact (CC)</label><input type="email" id="cc" placeholder="name@liferay.com"></div>
           </div>
         </details>
+        <p><strong>Option B: support ticket</strong> (Liferay subscribers with a Help Center account)</p>
+        <ol class="list">
+          <li>Go to the <a href="https://help.liferay.com" target="_blank" rel="noopener">Liferay Help Center</a> and sign in with your liferay.com account.</li>
+          <li>Choose <strong>Contact Support</strong> (or <strong>Submit a request</strong>) to open a new ticket, and select your project.</li>
+          <li>Use the subject <em>Upgrade assessment report – &lt;company&gt;</em>, and in the description say that this is the report for the Liferay upgrade program.</li>
+          <li>Attach the saved <code>.txt</code> file and submit the ticket.</li>
+          <li>If you know your <strong>Liferay customer success contact</strong>, let them know the ticket number.</li>
+        </ol>
+        <p class="hint">Liferay replies on the ticket and notifies you by e-mail.</p>
         <div class="callout info">The report contains technical details (versions, counts, plugin and site names) but no content from your sites, and the scripts do not read passwords. To hide names and addresses, use the privacy option in step 1.</div>
       </div>
     </section>
@@ -366,15 +374,7 @@
     <div class="phase-head"><span class="tag">Phase 2</span><h2>Preparation</h2><span class="range">Step 5</span><span class="team">Supported by Liferay Customer Success</span></div>
     <section class="step" id="step5" aria-labelledby="s5">
       <div class="step-head"><span class="step-num">5</span><h3 id="s5">Prepare the deliverables for the Liferay Upgrade Team</h3><span class="who">You</span></div>
-      <p class="lead">Prepare the deliverables for the upgrade and hand them off to the Liferay Upgrade Team. Liferay confirms the exact list with you; it typically includes:</p>
-      <div class="body">
-        <ul class="list">
-          <li>A recent copy of the database and the document library (file store).</li>
-          <li>The source code of your customizations (modules, themes, plugins).</li>
-          <li>Your configuration (for example portal properties and system settings).</li>
-          <li>Access to the environments and the contacts the Upgrade Team needs.</li>
-        </ul>
-      </div>
+      <p class="lead">Prepare the deliverables for the upgrade and hand them off to the Liferay Upgrade Team. Liferay tells you what is needed.</p>
     </section>
     <div class="pager"><a class="prev" href="#phase-assessment">← Assessment</a><a class="next" href="#phase-upgrade">Next: Core solution upgrade →</a></div>
   </div>
@@ -385,7 +385,7 @@
     <section class="step" id="step6" aria-labelledby="s6">
       <div class="step-head"><span class="step-num">6</span><h3 id="s6">Upgrade execution</h3><span class="who">Liferay Upgrade Team</span></div>
       <p class="lead">After the kick-off, Liferay performs the upgrade of your solution.</p>
-      <div class="body"><div class="facts"><span class="fact">Duration: 8–16 weeks</span><span class="fact">Performed by Liferay</span></div></div>
+      <div class="body"><p class="hint">The Liferay Upgrade Team confirms the timeline and details after the assessment phase.</p></div>
     </section>
     <div class="pager"><a class="prev" href="#phase-preparation">← Preparation</a><a class="next" href="#phase-validation">Next: Validation →</a></div>
   </div>
@@ -396,7 +396,7 @@
     <section class="step" id="step7" aria-labelledby="s7">
       <div class="step-head"><span class="step-num">7</span><h3 id="s7">UAT testing and fixes</h3><span class="who">You + Liferay Upgrade Team</span></div>
       <p class="lead">You test the upgraded solution in UAT; issues found are fixed.</p>
-      <div class="body"><div class="facts"><span class="fact">Duration: 30 days</span><span class="fact">UAT testing and fixes</span></div></div>
+      <div class="body"><p class="hint">The Liferay Upgrade Team confirms the timeline and details after the assessment phase.</p></div>
     </section>
     <div class="pager"><a class="prev" href="#phase-upgrade">← Core solution upgrade</a><a class="next" href="#phase-golive">Next: Go-Live →</a></div>
   </div>

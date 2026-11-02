@@ -23,12 +23,12 @@ The Liferay upgrade program has five phases:
 | --- | --- | --- | --- |
 | 1. Assessment | 0 | You | Identify your Liferay edition and version |
 | | 1 | You | Run the read-only script on UAT |
-| | 2 | You | Save the output as a `.txt` file and e-mail it to support@liferay.com |
+| | 2 | You | Save the output as a `.txt` file and send it to Liferay (e-mail or support ticket) |
 | | 3 | Liferay | Health check of your installation |
 | | 4 | Liferay, you | Qualification for the upgrade program; if you qualify, Liferay shares the contractual terms for sign-off |
 | 2. Preparation | 5 | You | Prepare the deliverables and hand them off to the Liferay Upgrade Team |
-| 3. Core solution upgrade | 6 | Liferay | Kick-off and upgrade execution, performed by Liferay (8 to 16 weeks) |
-| 4. Validation | 7 | You, Liferay | 30 days of UAT testing and fixes |
+| 3. Core solution upgrade | 6 | Liferay | Kick-off and upgrade execution, performed by Liferay |
+| 4. Validation | 7 | You, Liferay | UAT testing and fixes |
 | 5. Go-Live | 8 | You, Liferay | The upgraded solution goes live; support then comes from the Liferay Support team |
 
 Your Liferay contact in each phase:
@@ -148,9 +148,17 @@ report wrong values.
      `acme_ce-7.4-ga132_upgrade-report_2026-11-01.txt`.
 2. Check the file before sending it: it should contain the `"uas_end_date"` line at the end. If you see lines with
    `UAS ERROR`, still send the file; it tells Liferay what could not be read.
-3. E-mail the `.txt` file as an attachment to **support@liferay.com**, with the subject
-   *"Upgrade assessment report - <company>"*. If you know your **Liferay customer success contact**, put them in CC.
-   Don't paste the report into a website or chat: send it only as an e-mail attachment.
+3. Send the `.txt` file to Liferay, in one of these ways. Send it only as an attachment; don't paste the report
+   into a website or chat.
+   - **E-mail:** send it as an attachment to **support@liferay.com**, with the subject
+     *"Upgrade assessment report - <company>"*. If you know your **Liferay customer success contact**, put them in CC.
+   - **Support ticket** (Liferay subscribers with a Help Center account):
+     1. Go to the [Liferay Help Center](https://help.liferay.com) and sign in with your liferay.com account.
+     2. Choose **Contact Support** (or **Submit a request**) to open a new ticket, and select your project.
+     3. Use the subject *"Upgrade assessment report - <company>"*, and in the description say that this is the
+        report for the Liferay upgrade program.
+     4. Attach the `.txt` file and submit the ticket. Liferay replies on the ticket and notifies you by e-mail.
+     5. If you know your **Liferay customer success contact**, let them know the ticket number.
 
 The output contains technical details about your installation (versions, the database URL, plugin and site names,
 record counts) but no content from your sites, and the scripts do not read passwords. If you prefer not to share
@@ -169,17 +177,16 @@ contractual terms with you for sign-off.
 
 ## Step 5: Preparation
 
-You prepare the deliverables for the upgrade and hand them off to the Liferay Upgrade Team. Liferay confirms the
-exact list; it typically includes a recent copy of the database and document library, the source code of your
-customizations, your configuration, and access to the environments and contacts the team needs.
+You prepare the deliverables for the upgrade and hand them off to the Liferay Upgrade Team. Liferay tells you what
+is needed.
 
 ## Step 6: Core solution upgrade
 
-After the kick-off, Liferay performs the upgrade of your solution. This typically takes 8 to 16 weeks.
+After the kick-off, Liferay performs the upgrade of your solution. The Liferay Upgrade Team confirms the timeline and details after the assessment phase.
 
 ## Step 7: Validation
 
-30 days of UAT testing of the upgraded solution; issues found are fixed.
+You test the upgraded solution in UAT; issues found are fixed. The Liferay Upgrade Team confirms the timeline and details after the assessment phase.
 
 ## Step 8: Go-Live
 
