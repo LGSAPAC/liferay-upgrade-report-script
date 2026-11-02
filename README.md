@@ -241,6 +241,17 @@ All scripts print CSV lines: `"Key", "Value", "Description"`.
     `newitems_workflow_definitions_count`, `newitems_style_books_count`, `newitems_collections_count`,
     `newitems_batch_planner_plans_count`, `newitems_oauth2_applications_count`
 
+- **Hosting model** (all scripts, 6.1 and later): `infra_hosting_model` is a best-effort guess of how Liferay is
+  hosted: Liferay SaaS, Liferay PaaS (Liferay Cloud), self-hosted cloud native (Kubernetes / OpenShift),
+  self-hosted in containers (Docker / Podman), self-hosted on a cloud platform service (e.g. Azure App Service,
+  Amazon ECS / Fargate, Google Cloud Run), self-hosted on a cloud virtual machine, or self-hosted on premises. The
+  description gives the confidence and the signals found. Also `infra_hosting_container_platform`,
+  `infra_hosting_cloud_provider` (AWS, Azure, Google Cloud, Oracle Cloud, ...) and `infra_hosting_managed_services`
+  (e.g. Amazon RDS, Azure SQL, Cloud SQL, S3 / GCS / Azure Blob file stores). The script only looks at environment
+  variable names (never their values), container and Kubernetes marker files, the machine vendor
+  (`/sys/class/dmi/id`) and the domain suffix of the database and virtual host names; it makes no network calls and
+  prints no host names. Liferay SaaS does not normally allow Groovy scripts, so for SaaS customers the hosting model
+  is usually known without running the script.
 - **Sizing and hidden customizations** (all 7.x, CE and Quarterly Release scripts):
   - Documents and Media: `data_dl_total_size_bytes`, `data_dl_all_versions_size_bytes` (approximate file store
     size to migrate), `data_dl_files_by_mime_type`

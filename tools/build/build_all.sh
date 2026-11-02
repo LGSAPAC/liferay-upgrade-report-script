@@ -7,6 +7,8 @@ G=$(cd "$(dirname "$0")" && pwd); R=$(cd "$G/../.." && pwd)
 T="$G/quarterly_template.groovy $R/dxp_7_0/dxp_7_0-all.groovy $R/dxp_7_1/dxp_7_1-all.groovy $R/dxp_7_2/dxp_7_2-all.groovy $R/dxp_7_3/dxp_7_3-all.groovy"
 python3 "$G/privacy.py" "$G/quarterly_template.groovy" "$R/ee_6_1/ee_6_1-all.groovy" "$R/ee_6_2/ee_6_2-all.groovy" \
     "$R/dxp_7_0/dxp_7_0-all.groovy" "$R/dxp_7_1/dxp_7_1-all.groovy" "$R/dxp_7_2/dxp_7_2-all.groovy" "$R/dxp_7_3/dxp_7_3-all.groovy" >/dev/null
+python3 "$G/hosting.py" "$G/quarterly_template.groovy" "$R/ee_6_1/ee_6_1-all.groovy" "$R/ee_6_2/ee_6_2-all.groovy" \
+    "$R/dxp_7_0/dxp_7_0-all.groovy" "$R/dxp_7_1/dxp_7_1-all.groovy" "$R/dxp_7_2/dxp_7_2-all.groovy" "$R/dxp_7_3/dxp_7_3-all.groovy" >/dev/null
 python3 "$G/inject_section.py" "$G/deprecations_section.groovy" 6_deprecations x $T >/dev/null
 python3 "$G/inject_section.py" "$G/additional_section.groovy" 7_additional_info x $T >/dev/null
 python3 "$G/harden.py" "$G/quarterly_template.groovy:7.4" "$R/dxp_7_0/dxp_7_0-all.groovy:7.0" "$R/dxp_7_1/dxp_7_1-all.groovy:7.1" \
