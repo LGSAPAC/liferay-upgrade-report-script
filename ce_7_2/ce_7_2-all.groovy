@@ -222,6 +222,60 @@ class TableInfo implements Comparable<TableInfo> {
 
 // END included '_utils.groovy'
 
+// BEGIN included '_uas_plugins.groovy'
+// PluginPackageUtil.getInstalledPluginPackages() sorts the installed plugin packages and fails with a
+// NullPointerException when one of them has no package information (seen while a plugin is being deployed).
+// uasInstalledPluginPackages() retries, then falls back to the unsorted list, so the custom code section completes.
+def uasInstalledPluginPackages() {
+    def util = null
+    try {
+        util = Class.forName('com.liferay.portal.plugin.PluginPackageUtil', true, this.getClass().getClassLoader())
+    } catch (Throwable ignored) {
+        return []
+    }
+    Throwable error = null
+    for (int attempt = 0; attempt < 3; attempt++) {
+        try {
+            return (util.getInstalledPluginPackages() ?: []).findAll { it != null }
+        } catch (Throwable t) {
+            error = t
+            try {
+                Thread.sleep(2000)
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+    // fallback: read the repository of installed plugin packages without sorting it
+    try {
+        def repository = null
+        def holders = [null]
+        util.declaredFields.each { field ->
+            if (java.lang.reflect.Modifier.isStatic(field.modifiers) && field.type.name == 'com.liferay.portal.plugin.PluginPackageUtil') {
+                field.accessible = true
+                holders << field.get(null)
+            }
+        }
+        holders.each { holder ->
+            util.declaredFields.each { field ->
+                if (repository == null && field.type.name == 'com.liferay.portal.plugin.LocalPluginPackageRepository' &&
+                        (holder != null || java.lang.reflect.Modifier.isStatic(field.modifiers))) {
+                    field.accessible = true
+                    repository = field.get(holder)
+                }
+            }
+        }
+        def mapField = repository?.class?.declaredFields?.find { Map.isAssignableFrom(it.type) }
+        if (mapField != null) {
+            mapField.accessible = true
+            return (mapField.get(repository)?.values()?.toList() ?: []).findAll { it != null }
+        }
+    } catch (Throwable ignored) {
+    }
+    throw error
+}
+// END included '_uas_plugins.groovy'
+
+
 // BEGIN included '_uas_privacy.groovy'
 // Privacy option (UAS_MASK_PRIVATE_DATA at the top of the script). When it is true, names and addresses that
 // identify the organization are replaced in the output with stable placeholders (site-1, url-1, instance-1,
@@ -1101,7 +1155,7 @@ def _LayoutTemplateLocalServiceUtil_getLangType = { LayoutTemplate it ->
 }
 
 def allUniqueInstalledPlugins =
-        PluginPackageUtil.getInstalledPluginPackages().sort().reverse().unique { it.moduleId }
+        uasInstalledPluginPackages().sort().reverse().unique { it.moduleId }
 
 // Output all plugins as a CSV line, just in case we miss-categorize some custom plugin as a 'liferay' one
 println UASUtils.toCSVLine(
@@ -2276,7 +2330,7 @@ def invoke__6_deprecations_groovy(Map<String, Object> uasContext) {
         }
 
         try {
-            def extPlugins = com.liferay.portal.plugin.PluginPackageUtil.getInstalledPluginPackages().findAll {
+            def extPlugins = uasInstalledPluginPackages().findAll {
                 ('ext' in it.types) || (it.context ?: '').endsWith('-ext')
             }*.moduleId.unique().sort()
             report('ext_plugins_count', extPlugins.size(), 'EXT plugins: support removed in 7.4; replaced by configuration settings and standard extension points', extPlugins.collect { " - ${it}" }.join('\n'))

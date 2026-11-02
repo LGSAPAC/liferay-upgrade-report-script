@@ -9,6 +9,8 @@ python3 "$G/privacy.py" "$G/quarterly_template.groovy" "$R/ee_6_1/ee_6_1-all.gro
     "$R/dxp_7_0/dxp_7_0-all.groovy" "$R/dxp_7_1/dxp_7_1-all.groovy" "$R/dxp_7_2/dxp_7_2-all.groovy" "$R/dxp_7_3/dxp_7_3-all.groovy" >/dev/null
 python3 "$G/hosting.py" "$G/quarterly_template.groovy" "$R/ee_6_1/ee_6_1-all.groovy" "$R/ee_6_2/ee_6_2-all.groovy" \
     "$R/dxp_7_0/dxp_7_0-all.groovy" "$R/dxp_7_1/dxp_7_1-all.groovy" "$R/dxp_7_2/dxp_7_2-all.groovy" "$R/dxp_7_3/dxp_7_3-all.groovy" >/dev/null
+python3 "$G/plugins_safe.py" "$G/quarterly_template.groovy" "$R/ee_6_1/ee_6_1-all.groovy" "$R/ee_6_2/ee_6_2-all.groovy" \
+    "$R/dxp_7_0/dxp_7_0-all.groovy" "$R/dxp_7_1/dxp_7_1-all.groovy" "$R/dxp_7_2/dxp_7_2-all.groovy" "$R/dxp_7_3/dxp_7_3-all.groovy" >/dev/null
 python3 "$G/add_section.py" "$G/compatibility_section.groovy" 1_compatibility 1_hosting "$G/quarterly_template.groovy" "$R/ee_6_1/ee_6_1-all.groovy" \
     "$R/ee_6_2/ee_6_2-all.groovy" "$R/dxp_7_0/dxp_7_0-all.groovy" "$R/dxp_7_1/dxp_7_1-all.groovy" "$R/dxp_7_2/dxp_7_2-all.groovy" \
     "$R/dxp_7_3/dxp_7_3-all.groovy" >/dev/null

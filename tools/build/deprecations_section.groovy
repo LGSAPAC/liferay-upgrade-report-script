@@ -646,7 +646,7 @@ def invoke__6_deprecations_groovy(Map<String, Object> uasContext) {
         }
 
         try {
-            def extPlugins = com.liferay.portal.plugin.PluginPackageUtil.getInstalledPluginPackages().findAll {
+            def extPlugins = uasInstalledPluginPackages().findAll {
                 ('ext' in it.types) || (it.context ?: '').endsWith('-ext')
             }*.moduleId.unique().sort()
             report('ext_plugins_count', extPlugins.size(), 'EXT plugins: support removed in 7.4; replaced by configuration settings and standard extension points', extPlugins.collect { " - ${it}" }.join('\n'))
