@@ -55,10 +55,11 @@
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 var(--sans); }
-  main { max-width: 900px; margin: 0 auto; padding: 32px 16px 64px; }
-  .langbar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 8px; }
+  main { max-width: 900px; margin: 0 auto; padding: 0 16px 64px; }
+  header { padding-top: 22px; }
+  .langbar { display: flex; align-items: center; gap: 6px; flex: none; margin-left: auto; }
   .langbar label { margin: 0; font-weight: 400; font-size: .9rem; color: var(--muted); }
-  .langbar select { width: auto; padding: 5px 8px; font-size: .9rem; }
+  .langbar select { width: auto; max-width: 9.5rem; padding: 3px 6px; font-size: .85rem; }
   header h1 { font-size: 1.8rem; line-height: 1.25; margin: 0 0 6px; }
   header p { margin: 0; color: var(--muted); }
 
@@ -166,7 +167,7 @@
   .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; font-size: .9rem; color: var(--muted); }
 
   /* sticky navigation */
-  .nav { position: sticky; top: 0; z-index: 10; margin: 14px -16px 0; padding: 8px 16px; background: var(--bg);
+  .nav { position: sticky; top: 0; z-index: 10; margin: 0 -16px; padding: 8px 16px; background: var(--bg);
          border-bottom: 1px solid var(--border); }
   .nav-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; }
   .nav-row + .nav-row { margin-top: 6px; }
@@ -179,7 +180,11 @@
              color: var(--pc); border: 2px solid var(--pc); background: var(--surface); }
   .nav .ns[aria-current="true"] { background: var(--pc); color: var(--surface); }
   .nav .steps-label { flex: none; align-self: center; font-size: .8rem; color: var(--muted); margin-right: 2px; }
-  .phase, section.step { scroll-margin-top: 110px; }
+  .phase, section.step, #why { scroll-margin-top: 110px; }
+  .nav-top { display: flex; align-items: center; gap: 10px; }
+  .nav-top + .nav-top { margin-top: 6px; }
+  .nav-top .nav-row { flex: 1 1 auto; min-width: 0; }
+  .team-why { --pc: var(--accent); --pcs: var(--accent-soft); }
   .pager { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; font-size: .92rem; }
   .pager a { text-decoration: none; font-weight: 600; }
   .pager .next { margin-left: auto; }
@@ -189,6 +194,8 @@
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .totop { transition: none; } }
 
   @media (max-width: 760px) {
+    .langbar label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .langbar select { max-width: 6.2rem; }
     .phases { grid-template-columns: 1fr 1fr; }
     .reasons { grid-template-columns: 1fr 1fr; }
     .lead, .body { margin-left: 0; }
@@ -200,7 +207,30 @@
 </head>
 <body>
 <main id="top">
-  <header>
+  <nav class="nav" aria-label="Sections" data-i18n-attr="aria-label:a7ff5a6da">
+    <div class="nav-top">
+    <div class="nav-row" data-i18n="05dbc7df">
+      <a class="np team-why" href="#why">Why upgrade</a>
+      <a class="np team-cs" href="#phase-assessment"><b>1</b> Assessment</a>
+      <a class="np team-cs" href="#phase-preparation"><b>2</b> Preparation</a>
+      <a class="np team-up" href="#phase-upgrade"><b>3</b> Core upgrade</a>
+      <a class="np team-up" href="#phase-validation"><b>4</b> Validation</a>
+      <a class="np team-sup" href="#phase-golive"><b>5</b> Go-Live</a>
+    </div>
+    </div>
+    <div class="nav-top">
+    <div class="nav-row" data-i18n="dd2c44d2">
+      <span class="steps-label">Steps</span>
+      <a class="ns team-cs" href="#step0" title="Step 0: Identify your version" data-i18n-attr="title:a1774d6fe">0</a>
+      <a class="ns team-cs" href="#step1" title="Step 1: Run the script on UAT" data-i18n-attr="title:a8e76fe39">1</a>
+      <a class="ns team-cs" href="#step2" title="Step 2: Save and e-mail the report" data-i18n-attr="title:aed2d1ba3">2</a>
+      <a class="ns team-cs" href="#step3" title="Step 3: Health check" data-i18n-attr="title:ad8f55532">3</a>
+      <a class="ns team-cs" href="#step4" title="Step 4: Qualification and agreement" data-i18n-attr="title:a7976e8e2">4</a>
+      <a class="ns team-cs" href="#step5" title="Step 5: Prepare the deliverables" data-i18n-attr="title:a83ff3299">5</a>
+      <a class="ns team-up" href="#step6" title="Step 6: Upgrade execution" data-i18n-attr="title:afc306b63">6</a>
+      <a class="ns team-up" href="#step7" title="Step 7: UAT testing and fixes" data-i18n-attr="title:a1eae2a44">7</a>
+      <a class="ns team-sup" href="#step8" title="Step 8: Go-Live" data-i18n-attr="title:ae2a0fa09">8</a>
+    </div>
     <div class="langbar">
       <label for="lang" data-i18n="89b86ab0">Language</label>
       <select id="lang" data-noi18n>
@@ -213,10 +243,13 @@
         <option value="ja">日本語</option>
       </select>
     </div>
+    </div>
+  </nav>
+  <header>
     <h1 data-i18n="36611d54">Liferay Upgrade Program</h1>
     <p data-i18n="cab641b2">From the upgrade assessment to go-live. Start with the assessment: identify your version, run the read-only script on your UAT environment and send the report to Liferay.</p>
 
-    <section class="why" aria-labelledby="why-title">
+    <section class="why" id="why" aria-labelledby="why-title">
       <h2 id="why-title" data-i18n="99f76612">Why stay up to date with Liferay?</h2>
       <p data-i18n="9edd0251">Every release makes your platform safer, faster and easier to build on. Here are the top five reasons to upgrade.</p>
       <ol class="reasons">
@@ -248,27 +281,6 @@
     </div>
   </header>
 
-  <nav class="nav" aria-label="Sections" data-i18n-attr="aria-label:a7ff5a6da">
-    <div class="nav-row" data-i18n="1ad71358">
-      <a class="np team-cs" href="#phase-assessment"><b>1</b> Assessment</a>
-      <a class="np team-cs" href="#phase-preparation"><b>2</b> Preparation</a>
-      <a class="np team-up" href="#phase-upgrade"><b>3</b> Core upgrade</a>
-      <a class="np team-up" href="#phase-validation"><b>4</b> Validation</a>
-      <a class="np team-sup" href="#phase-golive"><b>5</b> Go-Live</a>
-    </div>
-    <div class="nav-row" data-i18n="dd2c44d2">
-      <span class="steps-label">Steps</span>
-      <a class="ns team-cs" href="#step0" title="Step 0: Identify your version" data-i18n-attr="title:a1774d6fe">0</a>
-      <a class="ns team-cs" href="#step1" title="Step 1: Run the script on UAT" data-i18n-attr="title:a8e76fe39">1</a>
-      <a class="ns team-cs" href="#step2" title="Step 2: Save and e-mail the report" data-i18n-attr="title:aed2d1ba3">2</a>
-      <a class="ns team-cs" href="#step3" title="Step 3: Health check" data-i18n-attr="title:ad8f55532">3</a>
-      <a class="ns team-cs" href="#step4" title="Step 4: Qualification and agreement" data-i18n-attr="title:a7976e8e2">4</a>
-      <a class="ns team-cs" href="#step5" title="Step 5: Prepare the deliverables" data-i18n-attr="title:a83ff3299">5</a>
-      <a class="ns team-up" href="#step6" title="Step 6: Upgrade execution" data-i18n-attr="title:afc306b63">6</a>
-      <a class="ns team-up" href="#step7" title="Step 7: UAT testing and fixes" data-i18n-attr="title:a1eae2a44">7</a>
-      <a class="ns team-sup" href="#step8" title="Step 8: Go-Live" data-i18n-attr="title:ae2a0fa09">8</a>
-    </div>
-  </nav>
 
   <!-- ======================= PHASE 1: ASSESSMENT ======================= -->
   <div class="phase team-cs" id="phase-assessment">
@@ -430,7 +442,8 @@
       <p class="lead" data-i18n="00b5044b">Liferay reviews your report and carries out a health check of your installation: version, infrastructure, data volumes, customizations and features that are deprecated in newer releases.</p>
       <div class="body"><div class="callout ok" data-i18n="80f91307">With this assessment you receive a <strong>free Liferay DXP architecture health check</strong>. You can stop after this step: there is no obligation to continue with the upgrade program.</div>
         <p class="hint" data-i18n="028ccbcd"><a href="samples/sample-health-check-report.pdf" target="_blank" rel="noopener">See a sample health check report (PDF, fictitious data)</a></p>
-        <p class="hint" data-i18n="386316bb">The health check is provided on a best-effort basis and for reference only. It is based on the output of the read-only script; it is not an audit, a guarantee or a warranty.</p></div>
+        <p class="hint" data-i18n="386316bb">The health check is provided on a best-effort basis and for reference only. It is based on the output of the read-only script; it is not an audit, a guarantee or a warranty.</p>
+        <p class="hint" data-i18n="59f0cfd4"><a class="learn" href="https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay/deprecations-and-breaking-changes-reference" target="_blank" rel="noopener">Deprecations and breaking changes by release (Liferay Learn)</a></p></div>
     </section>
 
     <!-- STEP 4 -->
@@ -448,6 +461,7 @@
     <section class="step" id="step5" aria-labelledby="s5">
       <div class="step-head"><span class="step-num">5</span><h3 id="s5" data-i18n="d1ef023d">Prepare the deliverables for the Liferay Upgrade Team</h3><span class="who" data-i18n="905cb326">You</span></div>
       <p class="lead" data-i18n="fc0819fe">Prepare the deliverables for the upgrade and hand them off to the Liferay Upgrade Team. Liferay tells you what is needed.</p>
+      <div class="body"><p class="hint" data-i18n="ac7d33a9"><a class="learn" href="https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay/preparing-for-an-upgrade" target="_blank" rel="noopener">Preparing for an upgrade (Liferay Learn)</a></p></div>
     </section>
     <div class="pager" data-i18n="03f93120"><a class="prev" href="#phase-assessment">← Assessment</a><a class="next" href="#phase-upgrade">Next: Core solution upgrade →</a></div>
   </div>
@@ -458,7 +472,8 @@
     <section class="step" id="step6" aria-labelledby="s6">
       <div class="step-head"><span class="step-num">6</span><h3 id="s6" data-i18n="d2fe5e53">Upgrade execution</h3><span class="who" data-i18n="893aa745">Liferay Upgrade Team</span></div>
       <p class="lead" data-i18n="ec1aea07">After the kick-off, Liferay performs the upgrade of your solution.</p>
-      <div class="body"><p class="hint" data-i18n="42ce1fb4">The Liferay Upgrade Team confirms the timeline and details after the assessment phase.</p></div>
+      <div class="body"><p class="hint" data-i18n="42ce1fb4">The Liferay Upgrade Team confirms the timeline and details after the assessment phase.</p>
+        <p class="hint" data-i18n="b6502965"><a class="learn" href="https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay" target="_blank" rel="noopener">How a Liferay upgrade works (Liferay Learn)</a></p></div>
     </section>
     <div class="pager" data-i18n="6cd12671"><a class="prev" href="#phase-preparation">← Preparation</a><a class="next" href="#phase-validation">Next: Validation →</a></div>
   </div>
@@ -489,6 +504,7 @@
   <footer>
     <p data-i18n="05740961">Scripts and documentation: <a href="https://github.com/LGSAPAC/liferay-upgrade-report-script" rel="noopener">github.com/LGSAPAC/liferay-upgrade-report-script</a></p>
     <p class="lr-links" data-i18n="42906ca7"><span>Liferay.com:</span> <a class="lr" href="https://www.liferay.com/platform" target="_blank" rel="noopener">Liferay DXP platform</a> · <a class="lr" href="https://www.liferay.com/liferay-service-life-policy" target="_blank" rel="noopener">Service life policy</a> · <a class="lr" href="https://www.liferay.com/security-statement" target="_blank" rel="noopener">Security</a> · <a class="lr" href="https://www.liferay.com/subscriptions" target="_blank" rel="noopener">Subscriptions</a> · <a class="lr" href="https://www.liferay.com/consulting" target="_blank" rel="noopener">Consulting</a> · <a class="lr" href="https://www.liferay.com/contact-us" target="_blank" rel="noopener">Contact us</a></p>
+    <p class="lr-links" data-i18n="bab6db83"><span>Liferay Learn:</span> <a class="learn" href="https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay" target="_blank" rel="noopener">Upgrading Liferay</a> · <a class="learn" href="https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay/preparing-for-an-upgrade" target="_blank" rel="noopener">Preparing for an upgrade</a> · <a class="learn" href="https://learn.liferay.com/w/dxp/self-hosted-installation-and-upgrades/upgrading-liferay/deprecations-and-breaking-changes-reference" target="_blank" rel="noopener">Deprecations and breaking changes</a></p>
   </footer>
 </main>
 <a class="button totop" id="toTop" href="#top" aria-label="Back to top" data-i18n-attr="aria-label:ad9c883a9" data-i18n="9acf6d2a">↑ Top</a>
