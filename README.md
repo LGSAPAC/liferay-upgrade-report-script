@@ -29,7 +29,7 @@ The Liferay upgrade program has five phases:
 | 2. Preparation | 5 | You | Prepare the deliverables and hand them off to the Liferay Upgrade Team |
 | 3. Core solution upgrade | 6 | Liferay | Kick-off and upgrade execution, performed by Liferay |
 | 4. Validation | 7 | You, Liferay | UAT testing and fixes |
-| 5. Go-Live | 8 | You, Liferay | The upgraded solution goes live; support then comes from the Liferay Support team |
+| 5. Go-Live | 8 | You, Liferay | The upgraded solution goes live; support then comes from the Liferay Support team (out-of-the-box features only) |
 
 Your Liferay contact in each phase:
 
@@ -190,7 +190,9 @@ You test the upgraded solution in UAT; issues found are fixed. The Liferay Upgra
 
 ## Step 8: Go-Live
 
-The upgraded solution goes live. From then on, support comes from the Liferay Support team.
+The upgraded solution goes live. From then on, support comes from the Liferay Support team. Liferay Support covers
+**out-of-the-box (OOTB) Liferay features only**; your customizations (custom code, themes, integrations) are not
+covered by Liferay Support.
 
 ## If something fails
 
