@@ -6,8 +6,10 @@ Portal **EE** and Liferay **DXP**, including all **Quarterly Releases**.
 
 **Easiest way:** use the web page **https://lgsapac.github.io/liferay-upgrade-report-script/**. It finds the right
 script for your version, copies it for you (with an optional privacy setting), explains how to save the output and
-prepares the e-mail to Liferay. The report never goes through the page: you save it on your own computer and e-mail
-it to Liferay yourself.
+prepares the e-mail to Liferay. The report never goes through the page: you save it on your own computer and send it
+to Liferay yourself. The page is available in English, German, Spanish, French, Italian, Portuguese (Brazil) and
+Japanese, the languages of liferay.com. It follows the browser language; you can also choose one at the top of the
+page, or add `?lang=de`, `es`, `fr`, `it`, `pt` or `ja` to the link.
 
 > [!IMPORTANT]
 > - The scripts are **read-only**: they only read configuration and count records. They do not change data or settings.
@@ -309,6 +311,10 @@ and the description names the script to use instead. A feature that does not exi
 with an empty value and an `n/a - ...` description instead of stopping the script.
 
 ## For maintainers
+
+Web page translations: after changing any text of `index.html`, run `python3 tools/i18n/i18n.py mark`, translate
+the entries that `python3 tools/i18n/i18n.py build` reports as missing in `tools/i18n/<lang>.json`, and run the build
+again (it writes `i18n.js` and checks that the translations keep the HTML, links and placeholders).
 
 The 7.4, Quarterly Release and CE scripts are generated, and the 7.0 - 7.3 scripts get their shared sections, from
 the sources in [`tools/build`](tools/build). Change the sources there and run `tools/build/build_all.sh`, instead
