@@ -1,6 +1,5 @@
 {
  "00b5044b": "Liferay esamina il report ed esegue un health check dell'installazione: versione, infrastruttura, volumi di dati, personalizzazioni e funzionalità deprecate nelle release più recenti.",
- "028ccbcd": "<a href=\"samples/sample-health-check-report.pdf\" target=\"_blank\" rel=\"noopener\">Report di esempio dell'health check (PDF, dati fittizi)</a>",
  "03165570": "<a class=\"lr\" href=\"https://www.liferay.com/subscriptions\" target=\"_blank\" rel=\"noopener\">Informazioni sulle subscription Liferay</a>",
  "0324501e": "Passo 8",
  "03a5c21a": "L'impostazione <strong>Script Management</strong> in System Settings (Liferay DXP 2024.Q2 / Portal 7.4 GA120 e successive) controlla solo gli script in Workflow e Objects. Non è necessario modificarla per eseguire questo script.",
@@ -23,6 +22,7 @@
  "35322748": "I nomi dei menu sono riportati in inglese. Se Liferay è impostato in un'altra lingua, cerchi gli stessi menu in quella lingua.",
  "355c9103": "Test UAT e correzioni",
  "36611d54": "Liferay Upgrade Program",
+ "36c680eb": "<a href=\"samples/sample-platform-health-and-roadmap.pdf\" target=\"_blank\" rel=\"noopener\">Report di esempio dell'health check (PDF, dati fittizi)</a>",
  "386316bb": "L'health check è fornito in modalità best effort e solo a titolo indicativo. Si basa sull'output dello script in sola lettura e non costituisce un audit né alcuna garanzia.",
  "398287de": "<button type=\"button\" class=\"primary\" id=\"copyScript\" disabled>Copia script</button> <button type=\"button\" id=\"downloadScript\" disabled>Scarica script</button> <a class=\"button\" id=\"viewScript\" href=\"#\" target=\"_blank\" rel=\"noopener\" hidden>Visualizza su GitHub</a>",
  "40718653": "Contattare Liferay",

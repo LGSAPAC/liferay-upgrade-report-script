@@ -1,6 +1,5 @@
 {
  "00b5044b": "Liferay revisa su informe y realiza una revisión del estado de su instalación: versión, infraestructura, volumen de datos, personalizaciones y funcionalidades obsoletas en las versiones más recientes.",
- "028ccbcd": "<a href=\"samples/sample-health-check-report.pdf\" target=\"_blank\" rel=\"noopener\">Ver un informe de ejemplo de la revisión del estado (PDF, datos ficticios)</a>",
  "03165570": "<a class=\"lr\" href=\"https://www.liferay.com/subscriptions\" target=\"_blank\" rel=\"noopener\">Acerca de las suscripciones de Liferay</a>",
  "0324501e": "Paso 8",
  "03a5c21a": "El ajuste <strong>Script Management</strong> de System Settings (Liferay DXP 2024.Q2 / Portal 7.4 GA120 y posteriores) solo controla los scripts de Workflow y Objects. No necesita cambiarlo para ejecutar este script.",
@@ -23,6 +22,7 @@
  "35322748": "Los nombres de los menús se muestran en inglés. Si su Liferay está configurado en otro idioma, busque los mismos menús en ese idioma.",
  "355c9103": "Pruebas de UAT y correcciones",
  "36611d54": "Programa de actualización de Liferay",
+ "36c680eb": "<a href=\"samples/sample-platform-health-and-roadmap.pdf\" target=\"_blank\" rel=\"noopener\">Ver un informe de ejemplo de la revisión del estado (PDF, datos ficticios)</a>",
  "386316bb": "La revisión del estado se ofrece sin garantías y solo a título orientativo. Se basa en la salida del script de solo lectura y no constituye una auditoría ni ninguna garantía.",
  "398287de": "<button type=\"button\" class=\"primary\" id=\"copyScript\" disabled>Copiar script</button> <button type=\"button\" id=\"downloadScript\" disabled>Descargar script</button> <a class=\"button\" id=\"viewScript\" href=\"#\" target=\"_blank\" rel=\"noopener\" hidden>Ver en GitHub</a>",
  "40718653": "Contactar con Liferay",

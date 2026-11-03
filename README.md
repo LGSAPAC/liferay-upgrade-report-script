@@ -173,8 +173,8 @@ Liferay reviews the report and carries out a health check of your installation: 
 volumes, customizations, and features that are deprecated in newer releases.
 
 With this assessment you receive a **free Liferay DXP architecture health check**. You can stop after this step:
-there is no obligation to continue with the upgrade program. See a [sample health check report](samples/sample-health-check-report.pdf)
-(PDF, fictitious data).
+there is no obligation to continue with the upgrade program. See a [sample health check report](samples/sample-platform-health-and-roadmap.pdf)
+(PDF, fictional client and data).
 
 The health check is provided on a best-effort basis and for reference only. It is based on the output of the
 read-only script; it is not an audit, a guarantee or a warranty.
@@ -319,8 +319,7 @@ with an empty value and an `n/a - ...` description instead of stopping the scrip
 
 ## For maintainers
 
-Sample health check report: `samples/sample-health-check-report.pdf` is generated (fictitious data) by
-`python3 tools/samples/make_sample_report.py`.
+Sample health check report: `samples/sample-platform-health-and-roadmap.pdf` (fictional client and data).
 
 Web page translations: after changing any text of `index.html`, run `python3 tools/i18n/i18n.py mark`, translate
 the entries that `python3 tools/i18n/i18n.py build` reports as missing in `tools/i18n/<lang>.json`, and run the build

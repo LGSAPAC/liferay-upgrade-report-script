@@ -1,6 +1,5 @@
 {
  "00b5044b": "Liferay examine votre rapport et effectue un bilan de santé de votre installation : version, infrastructure, volumes de données, personnalisations et fonctionnalités dépréciées dans les versions plus récentes.",
- "028ccbcd": "<a href=\"samples/sample-health-check-report.pdf\" target=\"_blank\" rel=\"noopener\">Voir un exemple de rapport de bilan de santé (PDF, données fictives)</a>",
  "03165570": "<a class=\"lr\" href=\"https://www.liferay.com/subscriptions\" target=\"_blank\" rel=\"noopener\">À propos des abonnements Liferay</a>",
  "0324501e": "Étape 8",
  "03a5c21a": "Le paramètre <strong>Script Management</strong> des System Settings (Liferay DXP 2024.Q2 / Portal 7.4 GA120 et versions ultérieures) ne concerne que les scripts de Workflow et d’Objects. Vous n’avez pas besoin de le modifier pour exécuter ce script.",
@@ -23,6 +22,7 @@
  "35322748": "Les noms des menus sont indiqués en anglais. Si votre Liferay est configuré dans une autre langue, recherchez les mêmes menus dans cette langue.",
  "355c9103": "Tests UAT et corrections",
  "36611d54": "Programme de mise à niveau Liferay",
+ "36c680eb": "<a href=\"samples/sample-platform-health-and-roadmap.pdf\" target=\"_blank\" rel=\"noopener\">Voir un exemple de rapport de bilan de santé (PDF, données fictives)</a>",
  "386316bb": "Le bilan de santé est fourni sans garantie et à titre indicatif uniquement. Il repose sur la sortie du script en lecture seule ; il ne constitue ni un audit ni une garantie.",
  "398287de": "<button type=\"button\" class=\"primary\" id=\"copyScript\" disabled>Copier le script</button> <button type=\"button\" id=\"downloadScript\" disabled>Télécharger le script</button> <a class=\"button\" id=\"viewScript\" href=\"#\" target=\"_blank\" rel=\"noopener\" hidden>Voir sur GitHub</a>",
  "40718653": "Contacter Liferay",

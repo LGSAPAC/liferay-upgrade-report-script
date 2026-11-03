@@ -1,6 +1,5 @@
 {
  "00b5044b": "Liferay がレポートを確認し、お客様の環境のヘルスチェックを実施します。対象は、バージョン、インフラストラクチャ、データ量、カスタマイズ、そして新しいリリースで非推奨となる機能です。",
- "028ccbcd": "<a href=\"samples/sample-health-check-report.pdf\" target=\"_blank\" rel=\"noopener\">ヘルスチェックのサンプルレポートを見る（PDF、架空のデータ）</a>",
  "03165570": "<a class=\"lr\" href=\"https://www.liferay.com/subscriptions\" target=\"_blank\" rel=\"noopener\">Liferay サブスクリプションについて</a>",
  "0324501e": "ステップ 8",
  "03a5c21a": "System Settings の <strong>Script Management</strong> 設定（Liferay DXP 2024.Q2 / Portal 7.4 GA120 以降）が制御するのは、Workflow と Objects 内のスクリプトのみです。このスクリプトを実行するために変更する必要はありません。",
@@ -23,6 +22,7 @@
  "35322748": "メニュー名は英語表記で記載しています。Liferay を別の言語に設定している場合は、その言語で同じメニューを探してください。",
  "355c9103": "UAT テストと修正",
  "36611d54": "Liferay アップグレードプログラム",
+ "36c680eb": "<a href=\"samples/sample-platform-health-and-roadmap.pdf\" target=\"_blank\" rel=\"noopener\">ヘルスチェックのサンプルレポートを見る（PDF、架空のデータ）</a>",
  "386316bb": "ヘルスチェックはベストエフォートで提供される参考情報です。読み取り専用スクリプトの出力に基づくもので、監査や保証ではありません。",
  "398287de": "<button type=\"button\" class=\"primary\" id=\"copyScript\" disabled>スクリプトをコピー</button> <button type=\"button\" id=\"downloadScript\" disabled>スクリプトをダウンロード</button> <a class=\"button\" id=\"viewScript\" href=\"#\" target=\"_blank\" rel=\"noopener\" hidden>GitHub で表示</a>",
  "40718653": "Liferay に問い合わせる",

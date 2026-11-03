@@ -1,6 +1,5 @@
 {
  "00b5044b": "Liferay reviews your report and carries out a health check of your installation: version, infrastructure, data volumes, customizations and features that are deprecated in newer releases.",
- "028ccbcd": "<a href=\"samples/sample-health-check-report.pdf\" target=\"_blank\" rel=\"noopener\">See a sample health check report (PDF, fictitious data)</a>",
  "03165570": "<a class=\"lr\" href=\"https://www.liferay.com/subscriptions\" target=\"_blank\" rel=\"noopener\">About Liferay subscriptions</a>",
  "0324501e": "Step 8",
  "03a5c21a": "The <strong>Script Management</strong> setting in System Settings (Liferay DXP 2024.Q2 / Portal 7.4 GA120 and later) only controls scripts in Workflow and Objects. You don't need to change it to run this script.",
@@ -23,6 +22,7 @@
  "35322748": "Menu names are shown as in English. If your Liferay is set to another language, look for the same menus in that language.",
  "355c9103": "UAT testing and fixes",
  "36611d54": "Liferay Upgrade Program",
+ "36c680eb": "<a href=\"samples/sample-platform-health-and-roadmap.pdf\" target=\"_blank\" rel=\"noopener\">See a sample health check report (PDF, fictitious data)</a>",
  "386316bb": "The health check is provided on a best-effort basis and for reference only. It is based on the output of the read-only script; it is not an audit, a guarantee or a warranty.",
  "398287de": "<button type=\"button\" class=\"primary\" id=\"copyScript\" disabled>Copy script</button> <button type=\"button\" id=\"downloadScript\" disabled>Download script</button> <a class=\"button\" id=\"viewScript\" href=\"#\" target=\"_blank\" rel=\"noopener\" hidden>View on GitHub</a>",
  "40718653": "Contact Liferay",
