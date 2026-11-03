@@ -696,15 +696,15 @@
       { error: e.message, url: REPO + fileOf(current.id) }));
   }
   $('copyScript').addEventListener('click', function () {
-    preparedScript().then(function (t) { return copyText(t).then(function () {
+    preparedScript().then(function (text) { return copyText(text).then(function () {
       status($('scriptStatus'), 'ok', $('privacy').checked ?
         t('js.copied_privacy', 'Copied <code>{file}</code> with the privacy option switched on. Paste it into the Script console.', { file: fileOf(current.id) }) :
         t('js.copied', 'Copied <code>{file}</code>. Paste it into the Script console.', { file: fileOf(current.id) }));
     }); }).catch(scriptError);
   });
   $('downloadScript').addEventListener('click', function () {
-    preparedScript().then(function (t) {
-      download(current.id + '-all.groovy', t);
+    preparedScript().then(function (text) {
+      download(current.id + '-all.groovy', text);
       status($('scriptStatus'), 'ok', t('js.downloaded', 'Downloaded. Open the file, copy all of it and paste it into the Script console.'));
     }).catch(scriptError);
   });
