@@ -150,6 +150,9 @@
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   details { margin-top: 12px; }
   summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  .help .row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .lr-links { margin-top: 8px; }
+  .reasons a.lr { display: block; margin-top: 6px; font-weight: 600; }
   footer { margin-top: 34px; color: var(--muted); font-size: .9rem; text-align: center; }
   a { color: var(--accent); }
 
@@ -217,15 +220,16 @@
       <h2 id="why-title" data-i18n="99f76612">Why stay up to date with Liferay?</h2>
       <p data-i18n="9edd0251">Every release makes your platform safer, faster and easier to build on. Here are the top five reasons to upgrade.</p>
       <ol class="reasons">
-        <li data-i18n="b5088345"><strong>Security</strong>The latest security fixes protect your sites, your users and their data.</li>
-        <li data-i18n="d7c2fbeb"><strong>Supported and compliant</strong>Stay within Liferay's support lifecycle, with fixes and help when you need them.</li>
-        <li data-i18n="f9685847"><strong>New capabilities</strong>Use what newer releases bring, such as AI features, Objects, client extensions and low-code tools.</li>
+        <li data-i18n="0e780ef7"><strong>Security</strong>The latest security fixes protect your sites, your users and their data. <a class="lr" href="https://www.liferay.com/security-statement" target="_blank" rel="noopener">Liferay security</a></li>
+        <li data-i18n="4e596eaa"><strong>Supported and compliant</strong>Stay within Liferay's support lifecycle, with fixes and help when you need them. <a class="lr" href="https://www.liferay.com/liferay-service-life-policy" target="_blank" rel="noopener">Service life policy</a></li>
+        <li data-i18n="32a38ec1"><strong>New capabilities</strong>Use what newer releases bring, such as AI features, Objects, client extensions and low-code tools. <a class="lr" href="https://www.liferay.com/platform" target="_blank" rel="noopener">Explore the platform</a></li>
         <li data-i18n="fb975385"><strong>Performance and compatibility</strong>Run on current Java versions, databases, application servers and browsers.</li>
         <li data-i18n="12660437"><strong>Lower cost of ownership</strong>Retire deprecated features and technical debt, and make every future upgrade smaller.</li>
       </ol>
       <div class="help">
         <p data-i18n="9c2a3062"><strong>We're here to help.</strong> The Liferay upgrade program takes you from assessment to go-live with Liferay Customer Success, the Liferay Upgrade Team and Liferay Support at your side. It starts with a read-only assessment of your installation, which includes a <strong>free Liferay DXP architecture health check</strong> (best effort, for reference only). You can stop after the health check (step 3), with no obligation.</p>
         <a class="button primary" href="#step0" data-i18n="efaff602">Start the assessment</a>
+        <a class="button lr" href="https://www.liferay.com/contact-us" target="_blank" rel="noopener" data-i18n="40718653">Contact Liferay</a>
       </div>
     </section>
 
@@ -433,6 +437,7 @@
     <section class="step" id="step4" aria-labelledby="s4">
       <div class="step-head"><span class="step-num">4</span><h3 id="s4" data-i18n="ad225820">Qualification and agreement</h3><span class="who" data-i18n="71754cf2">Liferay Customer Success → You</span></div>
       <p class="lead" data-i18n="b35f29b9">Liferay validates whether you qualify for the Liferay upgrade program. If you qualify, Liferay shares the contractual terms with you for sign-off.</p>
+      <div class="body"><p class="hint" data-i18n="03165570"><a class="lr" href="https://www.liferay.com/subscriptions" target="_blank" rel="noopener">About Liferay subscriptions</a></p></div>
     </section>
     <div class="pager" data-i18n="d2a182d6"><a class="next" href="#phase-preparation">Next: Preparation →</a></div>
   </div>
@@ -475,13 +480,15 @@
     <section class="step" id="step8" aria-labelledby="s8">
       <div class="step-head"><span class="step-num">8</span><h3 id="s8" data-i18n="e23738a2">Go-Live</h3><span class="who" data-i18n="a4ead760">You + Liferay Support</span></div>
       <p class="lead" data-i18n="74db2d10">The upgraded solution goes live. From then on, support comes from the Liferay Support team.</p>
-      <div class="body"><div class="callout info" data-i18n="ecb41b99">Liferay Support covers <strong>out-of-the-box (OOTB) Liferay features only</strong>. Your customizations (custom code, themes, integrations) are not covered by Liferay Support.</div></div>
+      <div class="body"><div class="callout info" data-i18n="ecb41b99">Liferay Support covers <strong>out-of-the-box (OOTB) Liferay features only</strong>. Your customizations (custom code, themes, integrations) are not covered by Liferay Support.</div>
+        <p class="hint" data-i18n="72f906a5"><a class="lr" href="https://www.liferay.com/support/coverage-areas-and-hours" target="_blank" rel="noopener">Liferay Support coverage areas and hours</a></p></div>
     </section>
     <div class="pager" data-i18n="a17b4cdf"><a class="prev" href="#phase-validation">← Validation</a><a class="next" href="#top">Back to top ↑</a></div>
   </div>
 
-  <footer data-i18n="05740961">
-    Scripts and documentation: <a href="https://github.com/LGSAPAC/liferay-upgrade-report-script" rel="noopener">github.com/LGSAPAC/liferay-upgrade-report-script</a>
+  <footer>
+    <p data-i18n="05740961">Scripts and documentation: <a href="https://github.com/LGSAPAC/liferay-upgrade-report-script" rel="noopener">github.com/LGSAPAC/liferay-upgrade-report-script</a></p>
+    <p class="lr-links" data-i18n="42906ca7"><span>Liferay.com:</span> <a class="lr" href="https://www.liferay.com/platform" target="_blank" rel="noopener">Liferay DXP platform</a> · <a class="lr" href="https://www.liferay.com/liferay-service-life-policy" target="_blank" rel="noopener">Service life policy</a> · <a class="lr" href="https://www.liferay.com/security-statement" target="_blank" rel="noopener">Security</a> · <a class="lr" href="https://www.liferay.com/subscriptions" target="_blank" rel="noopener">Subscriptions</a> · <a class="lr" href="https://www.liferay.com/consulting" target="_blank" rel="noopener">Consulting</a> · <a class="lr" href="https://www.liferay.com/contact-us" target="_blank" rel="noopener">Contact us</a></p>
   </footer>
 </main>
 <a class="button totop" id="toTop" href="#top" aria-label="Back to top" data-i18n-attr="aria-label:ad9c883a9" data-i18n="9acf6d2a">↑ Top</a>
@@ -525,6 +532,14 @@
     if (DICT['meta.title']) document.title = DICT['meta.title'];
     var description = document.querySelector('meta[name="description"]');
     if (description && DICT['meta.description']) description.setAttribute('content', DICT['meta.description']);
+  }
+  // liferay.com links in the page language (liferay.com/ja/ redirects to liferay.co.jp); pages without a translation stay in English
+  var LR_ENGLISH_ONLY = { '/support/coverage-areas-and-hours': ['de', 'es', 'it', 'ja'] };
+  if (LANG !== 'en') {
+    Array.prototype.forEach.call(document.querySelectorAll('a.lr'), function (a) {
+      var url = new URL(a.href);
+      if ((LR_ENGLISH_ONLY[url.pathname] || []).indexOf(LANG) < 0) a.href = url.origin + '/' + LANG + url.pathname;
+    });
   }
   var langSelect = document.getElementById('lang');
   langSelect.value = LANG;
