@@ -138,6 +138,8 @@
   .toggle label { margin: 0; }
   .callout { margin-top: 12px; padding: 12px 14px; border-radius: 8px; font-size: .95rem; }
   .callout.warn { background: var(--warn-soft); color: var(--warn); }
+  .callout.ok { background: var(--ok-soft); color: var(--text); }
+  .badge-free { font-size: .72rem; font-weight: 700; letter-spacing: .04em; color: var(--ok); background: var(--ok-soft); border-radius: 999px; padding: 2px 8px; }
   .callout.info { background: var(--accent-soft); color: var(--text); }
   .callout a { color: inherit; font-weight: 600; }
   .status { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: .95rem; display: none; }
@@ -222,7 +224,7 @@
         <li data-i18n="12660437"><strong>Lower cost of ownership</strong>Retire deprecated features and technical debt, and make every future upgrade smaller.</li>
       </ol>
       <div class="help">
-        <p data-i18n="7539c6d6"><strong>We're here to help.</strong> The Liferay upgrade program takes you from assessment to go-live with Liferay Customer Success, the Liferay Upgrade Team and Liferay Support at your side. It starts with a read-only assessment of your installation.</p>
+        <p data-i18n="fbd6211e"><strong>We're here to help.</strong> The Liferay upgrade program takes you from assessment to go-live with Liferay Customer Success, the Liferay Upgrade Team and Liferay Support at your side. It starts with a read-only assessment of your installation, which includes a <strong>free Liferay DXP architecture health check</strong>. You can stop after the health check (step 3), with no obligation.</p>
         <a class="button primary" href="#step0" data-i18n="efaff602">Start the assessment</a>
       </div>
     </section>
@@ -420,8 +422,9 @@
 
     <!-- STEP 3 -->
     <section class="step" id="step3" aria-labelledby="s3">
-      <div class="step-head"><span class="step-num">3</span><h3 id="s3" data-i18n="6afd56ff">Health check</h3><span class="who" data-i18n="b68baf05">Liferay Customer Success</span></div>
+      <div class="step-head"><span class="step-num">3</span><h3 id="s3" data-i18n="6afd56ff">Health check</h3><span class="badge-free" data-i18n="4a9768fa">FREE</span><span class="who" data-i18n="b68baf05">Liferay Customer Success</span></div>
       <p class="lead" data-i18n="00b5044b">Liferay reviews your report and carries out a health check of your installation: version, infrastructure, data volumes, customizations and features that are deprecated in newer releases.</p>
+      <div class="body"><div class="callout ok" data-i18n="80f91307">With this assessment you receive a <strong>free Liferay DXP architecture health check</strong>. You can stop after this step: there is no obligation to continue with the upgrade program.</div></div>
     </section>
 
     <!-- STEP 4 -->

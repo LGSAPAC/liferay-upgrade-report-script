@@ -172,6 +172,9 @@ password, remove them from the `.txt` file before sending it. Share the file onl
 Liferay reviews the report and carries out a health check of your installation: version, infrastructure, data
 volumes, customizations, and features that are deprecated in newer releases.
 
+With this assessment you receive a **free Liferay DXP architecture health check**. You can stop after this step:
+there is no obligation to continue with the upgrade program.
+
 ## Step 4: Qualification and agreement
 
 Liferay validates whether you qualify for the Liferay upgrade program. If you qualify, Liferay shares the
