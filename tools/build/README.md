@@ -8,6 +8,7 @@ tools/build/build_all.sh
 
 | Source | Used for |
 | --- | --- |
+| `stamp_version.py` | writes `VERSION` (repository root) into every script as `uas_version` |
 | `quarterly_template.groovy` | `dxp_7_4` and every `dxp_YYYY_qN` script (via `gen.py`) |
 | `helpers_section.groovy` | `uasClass` (runtime class loading), `uasGuard` (per-block error handling), `uasTimed` (durations) |
 | `data_section.groovy` | the `2_data` section of all 7.x scripts (one implementation, `@@DATA_VARIANT@@` per version) |

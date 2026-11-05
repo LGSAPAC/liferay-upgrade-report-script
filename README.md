@@ -313,6 +313,14 @@ All scripts print CSV lines: `"Key", "Value", "Description"`.
   - Custom code in `osgi/modules` and `osgi/war`: Java EE (`javax.*`, Jakarta EE from 2025.Q3), Soy,
     liferay-npm-bundler / AMD, removed `aui:nav-*` tags, `Liferay.OAuth2`, EXT plugins
 
+### Script version
+
+Every script prints its version as `uas_version` near the end of the output. The latest version is in
+[`VERSION`](VERSION) (raw: `https://raw.githubusercontent.com/LGSAPAC/liferay-upgrade-report-script/main/VERSION`).
+Always download the script again before an assessment instead of reusing an old copy: the web page always copies
+the latest script. A report with an older `uas_version`, or without one, misses newer checks (for example the
+hosting model, the deprecation checks and the sizing data), so Liferay may ask you to run the latest script again.
+
 If a script does not match the running version, `ce_target_match` / `infra_liferay_script_target_match` is `false`
 and the description names the script to use instead. A feature that does not exist in a given release is reported
 with an empty value and an `n/a - ...` description instead of stopping the script.
@@ -328,4 +336,9 @@ again (it writes `i18n.js` and checks that the translations keep the HTML, links
 The 7.4, Quarterly Release and CE scripts are generated, and the 7.0 - 7.3 scripts get their shared sections, from
 the sources in [`tools/build`](tools/build). Change the sources there and run `tools/build/build_all.sh`, instead
 of editing the `*-all.groovy` files one by one.
+
+Whenever you change a script, raise the version in [`VERSION`](VERSION) (for example `1.0.0` to `1.1.0` for new
+checks, `1.0.1` for a fix) and run `tools/build/build_all.sh`: it writes that version into every script as
+`uas_version`. Tools that read the reports, such as the Liferay DXP health check skill, compare a report's
+`uas_version` with this file to tell whether it was made with the latest script.
 

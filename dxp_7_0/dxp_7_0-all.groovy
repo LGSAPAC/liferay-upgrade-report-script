@@ -13,7 +13,7 @@ def UAS_MASK_PRIVATE_DATA = false
 // the @...@ tokens can in theory contain ' or ", so use a safe way to write these as Groovy String literals
 def uasMetadata = [
         projectVersion: """\
-                0.11.2
+                1.0.0
             """.trim(),
         sourceSetLabel: """\
                 Liferay DXP 7.0
