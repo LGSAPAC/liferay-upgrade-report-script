@@ -2006,21 +2006,26 @@ def invoke__6_deprecations_groovy(Map<String, Object> uasContext) {
             } else {
                 def ffManager = bundleContext.getService(ffReference)
                 try {
-                    def isDeprecation = { f -> f.featureFlagType.name().equalsIgnoreCase('deprecation') } as java.util.function.Predicate
-                    def lines = []
-                    com.liferay.portal.kernel.service.CompanyLocalServiceUtil.getCompanies().each { company ->
-                        ffManager.getFeatureFlags(company.companyId, isDeprecation).findAll { it.isEnabled() }.sort { it.key }.each { flag ->
-                            def title = ''
-                            try {
-                                title = flag.getTitle(company.locale) ?: ''
-                            } catch (Throwable ignored) {
+                    if (!ffManager.metaClass.respondsTo(ffManager, 'getFeatureFlags', [Long.TYPE, java.util.function.Predicate] as Object[])) {
+                        // Older 7.4 updates (e.g. DXP 7.4 U92): feature flags have no types, so deprecation flags cannot be told apart
+                        report('feature_flags_enabled_count', null, 'Deprecation feature flags: n/a (feature flag types not available in this release; see infra_feature_flags_active_count)', '')
+                    } else {
+                        def isDeprecation = { f -> f.featureFlagType.name().equalsIgnoreCase('deprecation') } as java.util.function.Predicate
+                        def lines = []
+                        com.liferay.portal.kernel.service.CompanyLocalServiceUtil.getCompanies().each { company ->
+                            ffManager.getFeatureFlags(company.companyId, isDeprecation).findAll { it.isEnabled() }.sort { it.key }.each { flag ->
+                                def title = ''
+                                try {
+                                    title = flag.getTitle(company.locale) ?: ''
+                                } catch (Throwable ignored) {
+                                }
+                                lines << " - ${company.webId} | ${flag.key} | ${title}"
                             }
-                            lines << " - ${company.webId} | ${flag.key} | ${title}"
                         }
+                        report('feature_flags_enabled_count', lines.size(),
+                                'Deprecation feature flags switched on (each keeps a deprecated feature available; it is planned for removal)',
+                                lines.join('\n'))
                     }
-                    report('feature_flags_enabled_count', lines.size(),
-                            'Deprecation feature flags switched on (each keeps a deprecated feature available; it is planned for removal)',
-                            lines.join('\n'))
                 } finally {
                     bundleContext.ungetService(ffReference)
                 }
