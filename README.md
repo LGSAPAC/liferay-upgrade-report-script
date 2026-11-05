@@ -235,6 +235,15 @@ If there is no **Script** tab, no **Groovy** language option, or the script is r
 
 All scripts print CSV lines: `"Key", "Value", "Description"`.
 
+Each script only checks what exists in its Liferay version, so older versions print fewer keys:
+
+- **6.1**: infrastructure, hosting model, compatibility check, table row counts, templates by language and custom
+  fields only (no custom code, other data counts or deprecation checks).
+- **6.2**: adds the basic data counts and plugins (portlets, themes, layout templates, web plugins, Service Builder);
+  no hooks, OSGi modules, sizing or deprecation checks.
+- **7.0 – 7.3**: custom code, sizing, data and deprecation checks, but no feature adoption (`newitems_*`) and none of
+  the 7.4 release, upgrade-readiness and script-match keys listed below.
+
 - **CE scripts** print the same keys as the EE / DXP script for that version, plus:
   `ce_edition_detected`, `ce_target_version`, `ce_target_match`, `ce_ga_level`, `ce_commercial_equivalent`,
   `ce_health_flags_count` (for example HSQL database, Java version, no clustering, 6.x plugins to migrate)
