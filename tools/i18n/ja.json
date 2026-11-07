@@ -4,7 +4,7 @@
  "0324501e": "ステップ 8",
  "03a5c21a": "System Settings の <strong>Script Management</strong> 設定（Liferay DXP 2024.Q2 / Portal 7.4 GA120 以降）が制御するのは、Workflow と Objects 内のスクリプトのみです。このスクリプトを実行するために変更する必要はありません。",
  "03f93120": "<a class=\"prev\" href=\"#phase-assessment\">← アセスメント</a><a class=\"next\" href=\"#phase-upgrade\">次へ: コアソリューションのアップグレード →</a>",
- "05740961": "スクリプトとドキュメント: <a href=\"https://github.com/LGSAPAC/liferay-upgrade-report-script\" rel=\"noopener\">github.com/LGSAPAC/liferay-upgrade-report-script</a>",
+ "9b51d259": "スクリプトとドキュメント: <a href=\"https://github.com/Liferay-Community-APAC/liferay-upgrade-report-script\" rel=\"noopener\">github.com/Liferay-Community-APAC/liferay-upgrade-report-script</a>",
  "05dbc7df": "<a class=\"np team-why\" href=\"#why\">アップグレードする理由</a> <a class=\"np team-cs\" href=\"#phase-assessment\"><b>1</b> アセスメント</a> <a class=\"np team-cs\" href=\"#phase-preparation\"><b>2</b> 準備</a> <a class=\"np team-up\" href=\"#phase-upgrade\"><b>3</b> コアアップグレード</a> <a class=\"np team-up\" href=\"#phase-validation\"><b>4</b> 検証</a> <a class=\"np team-sup\" href=\"#phase-golive\"><b>5</b> 本番稼働</a>",
  "065f10ac": "ステップ 6",
  "09906d33": "<button type=\"button\" role=\"tab\" id=\"tab-manual\" aria-controls=\"panel-manual\" aria-selected=\"true\">手動で確認する</button> <button type=\"button\" role=\"tab\" id=\"tab-script\" aria-controls=\"panel-script\" aria-selected=\"false\" tabindex=\"-1\">バージョン確認スクリプトを使う</button>",

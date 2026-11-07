@@ -4,7 +4,7 @@
  "0324501e": "Schritt 8",
  "03a5c21a": "Die Einstellung <strong>Script Management</strong> in den System Settings (Liferay DXP 2024.Q2 / Portal 7.4 GA120 und höher) steuert nur Skripte in Workflow und Objects. Sie müssen sie nicht ändern, um dieses Skript auszuführen.",
  "03f93120": "<a class=\"prev\" href=\"#phase-assessment\">← Assessment</a><a class=\"next\" href=\"#phase-upgrade\">Weiter: Core-Solution-Upgrade →</a>",
- "05740961": "Skripte und Dokumentation: <a href=\"https://github.com/LGSAPAC/liferay-upgrade-report-script\" rel=\"noopener\">github.com/LGSAPAC/liferay-upgrade-report-script</a>",
+ "9b51d259": "Skripte und Dokumentation: <a href=\"https://github.com/Liferay-Community-APAC/liferay-upgrade-report-script\" rel=\"noopener\">github.com/Liferay-Community-APAC/liferay-upgrade-report-script</a>",
  "05dbc7df": "<a class=\"np team-why\" href=\"#why\">Warum upgraden</a> <a class=\"np team-cs\" href=\"#phase-assessment\"><b>1</b> Assessment</a> <a class=\"np team-cs\" href=\"#phase-preparation\"><b>2</b> Vorbereitung</a> <a class=\"np team-up\" href=\"#phase-upgrade\"><b>3</b> Core-Upgrade</a> <a class=\"np team-up\" href=\"#phase-validation\"><b>4</b> Validierung</a> <a class=\"np team-sup\" href=\"#phase-golive\"><b>5</b> Go-Live</a>",
  "065f10ac": "Schritt 6",
  "09906d33": "<button type=\"button\" role=\"tab\" id=\"tab-manual\" aria-controls=\"panel-manual\" aria-selected=\"true\">Manuell ermitteln</button> <button type=\"button\" role=\"tab\" id=\"tab-script\" aria-controls=\"panel-script\" aria-selected=\"false\" tabindex=\"-1\">Versionsprüfungsskript verwenden</button>",

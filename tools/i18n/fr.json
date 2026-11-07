@@ -4,7 +4,7 @@
  "0324501e": "Étape 8",
  "03a5c21a": "Le paramètre <strong>Script Management</strong> des System Settings (Liferay DXP 2024.Q2 / Portal 7.4 GA120 et versions ultérieures) ne concerne que les scripts de Workflow et d’Objects. Vous n’avez pas besoin de le modifier pour exécuter ce script.",
  "03f93120": "<a class=\"prev\" href=\"#phase-assessment\">← Évaluation</a><a class=\"next\" href=\"#phase-upgrade\">Suivant : Mise à niveau de la solution →</a>",
- "05740961": "Scripts et documentation : <a href=\"https://github.com/LGSAPAC/liferay-upgrade-report-script\" rel=\"noopener\">github.com/LGSAPAC/liferay-upgrade-report-script</a>",
+ "9b51d259": "Scripts et documentation : <a href=\"https://github.com/Liferay-Community-APAC/liferay-upgrade-report-script\" rel=\"noopener\">github.com/Liferay-Community-APAC/liferay-upgrade-report-script</a>",
  "05dbc7df": "<a class=\"np team-why\" href=\"#why\">Pourquoi mettre à niveau</a> <a class=\"np team-cs\" href=\"#phase-assessment\"><b>1</b> Évaluation</a> <a class=\"np team-cs\" href=\"#phase-preparation\"><b>2</b> Préparation</a> <a class=\"np team-up\" href=\"#phase-upgrade\"><b>3</b> Mise à niveau</a> <a class=\"np team-up\" href=\"#phase-validation\"><b>4</b> Validation</a> <a class=\"np team-sup\" href=\"#phase-golive\"><b>5</b> Go-Live</a>",
  "065f10ac": "Étape 6",
  "09906d33": "<button type=\"button\" role=\"tab\" id=\"tab-manual\" aria-controls=\"panel-manual\" aria-selected=\"true\">Trouver manuellement</button> <button type=\"button\" role=\"tab\" id=\"tab-script\" aria-controls=\"panel-script\" aria-selected=\"false\" tabindex=\"-1\">Utiliser le script de vérification</button>",

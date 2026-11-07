@@ -4,7 +4,7 @@
  "0324501e": "Paso 8",
  "03a5c21a": "El ajuste <strong>Script Management</strong> de System Settings (Liferay DXP 2024.Q2 / Portal 7.4 GA120 y posteriores) solo controla los scripts de Workflow y Objects. No necesita cambiarlo para ejecutar este script.",
  "03f93120": "<a class=\"prev\" href=\"#phase-assessment\">← Evaluación</a><a class=\"next\" href=\"#phase-upgrade\">Siguiente: Actualización de la solución principal →</a>",
- "05740961": "Scripts y documentación: <a href=\"https://github.com/LGSAPAC/liferay-upgrade-report-script\" rel=\"noopener\">github.com/LGSAPAC/liferay-upgrade-report-script</a>",
+ "9b51d259": "Scripts y documentación: <a href=\"https://github.com/Liferay-Community-APAC/liferay-upgrade-report-script\" rel=\"noopener\">github.com/Liferay-Community-APAC/liferay-upgrade-report-script</a>",
  "05dbc7df": "<a class=\"np team-why\" href=\"#why\">Por qué actualizar</a> <a class=\"np team-cs\" href=\"#phase-assessment\"><b>1</b> Evaluación</a> <a class=\"np team-cs\" href=\"#phase-preparation\"><b>2</b> Preparación</a> <a class=\"np team-up\" href=\"#phase-upgrade\"><b>3</b> Actualización principal</a> <a class=\"np team-up\" href=\"#phase-validation\"><b>4</b> Validación</a> <a class=\"np team-sup\" href=\"#phase-golive\"><b>5</b> Puesta en producción</a>",
  "065f10ac": "Paso 6",
  "09906d33": "<button type=\"button\" role=\"tab\" id=\"tab-manual\" aria-controls=\"panel-manual\" aria-selected=\"true\">Buscarla manualmente</button> <button type=\"button\" role=\"tab\" id=\"tab-script\" aria-controls=\"panel-script\" aria-selected=\"false\" tabindex=\"-1\">Usar el script de comprobación de versión</button>",

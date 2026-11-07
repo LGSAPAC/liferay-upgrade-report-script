@@ -4,7 +4,7 @@ Read-only Groovy scripts that collect the information Liferay needs to assess an
 data volumes, customizations and features in use. They cover Liferay Portal **Community Edition (CE)**, Liferay
 Portal **EE** and Liferay **DXP**, including all **Quarterly Releases**.
 
-**Easiest way:** use the web page **https://lgsapac.github.io/liferay-upgrade-report-script/**. It finds the right
+**Easiest way:** use the web page **https://liferay-community-apac.github.io/liferay-upgrade-report-script/**. It finds the right
 script for your version, copies it for you (with an optional privacy setting), explains how to save the output and
 prepares the e-mail to Liferay. The report never goes through the page: you save it on your own computer and send it
 to Liferay yourself. The page is available in English, German, Spanish, French, Italian, Portuguese (Brazil) and
